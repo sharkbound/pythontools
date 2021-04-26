@@ -1,0 +1,4 @@
+prompt-toolkit
+questionary
+numpy
+matplotlib
