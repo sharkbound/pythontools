@@ -2,3 +2,12 @@ prompt-toolkit
 questionary
 numpy
 matplotlib
+
+DATA ANALYSIS AND MANIPULATION
+  pandas -> https://pandas.pydata.org/
+  google.colab (import drive) - allows mounting google drives for use in google colab
+
+MACHINE LEARNING:
+  sklearn -> https://scikit-learn.org/stable/index.html
+  keras -> https://keras.io/
+  tensorflow -> https://www.tensorflow.org/
