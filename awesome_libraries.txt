@@ -1,7 +1,7 @@
-prompt-toolkit
-questionary
-numpy
-matplotlib
+prompt-toolkit      # TUI Dialog library (terminal user interface)
+questionary         # restricted/enforced user input
+numpy               # memory efficient and fast arrays
+matplotlib          # graphing and plotting
 
 DATA ANALYSIS AND MANIPULATION
   pandas -> https://pandas.pydata.org/
