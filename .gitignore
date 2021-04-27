@@ -130,3 +130,5 @@ dmypy.json
 
 # pycharm project info
 .idea/
+/examples/fastapi_backend_server/certs/server.crt
+/examples/fastapi_backend_server/certs/server.key

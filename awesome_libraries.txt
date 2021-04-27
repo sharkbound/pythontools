@@ -1,4 +1,16 @@
-prompt-toolkit
-questionary
-numpy
-matplotlib
+prompt-toolkit      # TUI Dialog library (terminal user interface)
+questionary         # restricted/enforced user input
+numpy               # memory efficient and fast arrays
+matplotlib          # graphing and plotting
+icecream            # logging library that also logs variables and other data from one log function
+fastapi             # awesome backend http library
+uvicorn             # used to start fast api server
+
+DATA ANALYSIS AND MANIPULATION
+  pandas -> https://pandas.pydata.org/
+  google.colab (import drive) - allows mounting google drives for use in google colab
+
+MACHINE LEARNING:
+  sklearn -> https://scikit-learn.org/stable/index.html
+  keras -> https://keras.io/
+  tensorflow -> https://www.tensorflow.org/
