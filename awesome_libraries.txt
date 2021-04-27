@@ -2,6 +2,9 @@ prompt-toolkit      # TUI Dialog library (terminal user interface)
 questionary         # restricted/enforced user input
 numpy               # memory efficient and fast arrays
 matplotlib          # graphing and plotting
+icecream            # logging library that also logs variables and other data from one log function
+fastapi             # awesome backend http library
+uvicorn             # used to start fast api server
 
 DATA ANALYSIS AND MANIPULATION
   pandas -> https://pandas.pydata.org/
