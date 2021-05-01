@@ -132,3 +132,4 @@ dmypy.json
 .idea/
 /examples/fastapi_backend_server/certs/server.crt
 /examples/fastapi_backend_server/certs/server.key
+/testingcode/
