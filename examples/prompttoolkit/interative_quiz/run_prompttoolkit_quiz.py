@@ -5,6 +5,19 @@ from prompt_toolkit.key_binding import KeyBindings, KeyPressEvent
 from prompt_toolkit.styles import Style
 
 
+# from questionary on pypi, i shorted it from the original
+def _fix_unecessary_blank_lines(ps: PromptSession) -> None:
+    """This is a fix for additional empty lines added by prompt toolkit.
+
+    This assumes the layout of the default session doesn't change, if it
+    does, this needs an update."""
+    from prompt_toolkit.filters import Always
+    # this forces the main window to stay as small as possible, avoiding empty lines in selections
+    ps.layout.current_window.dont_extend_height = Always()
+    # disables the cursor, it is not used actively on the quiz example
+    ps.layout.current_window.always_hide_cursor = Always()
+
+
 class OptionsTextProvider:
     def __init__(self, *choices):
         self.choices = choices
@@ -59,31 +72,11 @@ class Quiz:
 
 
 quiz = Quiz(OptionsTextProvider('a', 'b', 'c'))
-session = PromptSession(message=quiz.text_provider.tokens)
+session = PromptSession(message=quiz.text_provider.tokens, erase_when_done=True)
 
 # hides the cursor
-session.layout.container.get_children()[0].content.get_children()[1].content.always_hide_cursor = Always()
+# session.layout.current_window.always_hide_cursor = Always()
+_fix_unecessary_blank_lines(session)
 
 app = Application(layout=session.layout, key_bindings=quiz.keybindings, style=quiz.style)
 print(f'RESULT: {app.run()}')
-
-# from questionary on pypi
-# def _fix_unecessary_blank_lines(ps: PromptSession) -> None:
-#     """This is a fix for additional empty lines added by prompt toolkit.
-#
-#     This assumes the layout of the default session doesn't change, if it
-#     does, this needs an update."""
-#
-#     default_container = ps.layout.container
-#
-#     default_buffer_window = (
-#         default_container
-#     )
-#
-#     from prompt_toolkit.layout import Window
-#     assert isinstance(default_buffer_window, Window)
-#     # this forces the main window to stay as small as possible, avoiding
-#     # empty lines in selections
-#     from prompt_toolkit.filters import Always
-#     default_buffer_window.dont_extend_height = Always()
-#     default_buffer_window.always_hide_cursor = Always()
