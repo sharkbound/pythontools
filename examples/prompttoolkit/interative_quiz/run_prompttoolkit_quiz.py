@@ -19,7 +19,9 @@ def _fix_unecessary_blank_lines(ps: PromptSession) -> None:
 
 
 class OptionsTextProvider:
-    def __init__(self, *choices):
+    def __init__(self, *choices, selected_prefix='>>> ', unselected_prefix=''):
+        self.unselected_prefix = unselected_prefix
+        self.selected_prefix = selected_prefix
         self.choices = choices
         self._current_selection = 0
         self.answered = False
@@ -39,8 +41,8 @@ class OptionsTextProvider:
 
     def _token_for_index(self, index, value):
         if index == self._current_selection:
-            return 'class:quiz_item_selected', f'* > {value}\n'
-        return 'class:quiz_item_not_selected', f'{value}\n'
+            return 'class:quiz_item_selected', f'{self.selected_prefix}{value}\n'
+        return 'class:quiz_item_not_selected', f'{self.unselected_prefix}{value}\n'
 
     def tokens(self):
         if self.answered:
@@ -72,7 +74,7 @@ class Quiz:
 
 
 quiz = Quiz(OptionsTextProvider('a', 'b', 'c'))
-session = PromptSession(message=quiz.text_provider.tokens, erase_when_done=True)
+session = PromptSession(message=quiz.text_provider.tokens)
 
 # hides the cursor
 # session.layout.current_window.always_hide_cursor = Always()
