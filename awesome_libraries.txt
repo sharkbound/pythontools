@@ -2,6 +2,9 @@
 prompt-toolkit      # TUI Dialog library (terminal user interface)
 questionary         # restricted/enforced user input
 
+# UI
+atlastk             # web ui attached to python code
+
 # MEMORY EFFICIENT AND FAST C ARRAYS
 numpy
 
