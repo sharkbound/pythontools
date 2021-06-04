@@ -12,6 +12,7 @@ numpy
 matplotlib  ->  https://matplotlib.org/
 plotly   ->  https://plotly.com/
 plotnine  -> https://plotnine.readthedocs.io/en/stable/
+networkx  -> used for representing and manipulating node-tree type data
 
 
 # DEBUGGING PRINT ALTERNATIVE
