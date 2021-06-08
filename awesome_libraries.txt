@@ -30,3 +30,6 @@ google.colab (import drive) - allows mounting google drives for use in google co
 sklearn -> https://scikit-learn.org/stable/index.html
 keras -> https://keras.io/
 tensorflow -> https://www.tensorflow.org/
+
+# DATABASES
+sqlalchemy -> database driver ORM wrapper
