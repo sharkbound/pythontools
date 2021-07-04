@@ -33,3 +33,7 @@ tensorflow -> https://www.tensorflow.org/
 
 # DATABASES
 sqlalchemy -> database driver ORM wrapper
+
+
+# UTILITIES
+more-itertools -> more iterator based functions that are missing from base itertools
