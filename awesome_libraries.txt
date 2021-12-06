@@ -37,3 +37,4 @@ sqlalchemy -> database driver ORM wrapper
 
 # UTILITIES
 more-itertools -> more iterator based functions that are missing from base itertools
+pympler -> memory analysis and profiles tools    GIT:https://github.com/pympler/pympler 
