@@ -1,6 +1,7 @@
-from sqllib import all_tags, AllTags, Tag, query, session, Record, commit, load_tags_from_id_database
 from dearpygui.dearpygui import get_value, set_value
+
 from constants import ModifyID
+from sqllib import Tag, query, Record, commit, load_tags_from_id_database
 
 
 def set_error(msg):

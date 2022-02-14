@@ -1,8 +1,8 @@
 from dearpygui.dearpygui import *
-from constants import FindID, ModifyID
 
 import find_tab_callbacks
 import modify_tab_callbacks
+from constants import FindID, ModifyID
 
 
 def add_ui_items():

@@ -1,8 +1,7 @@
-from typing import Tuple, List
+from typing import List
 
-from sqlalchemy import create_engine, orm, Integer, String, Column, BLOB, exists
+from sqlalchemy import create_engine, orm, Integer, String, Column
 from sqlalchemy.ext.declarative import declarative_base
-from pickle import dumps, loads
 
 FILE = 'index.db'
 engine = create_engine(f'sqlite:///{FILE}')

@@ -1,3 +1,0 @@
-THIS DOES NOT WORK ANYMORE!
-the library version used in this is older than the current pypi release.
-i dont know entirely what version it did use at the time of the project

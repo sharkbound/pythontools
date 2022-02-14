@@ -1,8 +1,6 @@
 from collections import defaultdict
-from threading import current_thread
 
 from dearpygui.dearpygui import set_value, get_value, get_item_children, delete_item, table_row, add_button, get_item_configuration
-from icecream import ic
 from sqlalchemy import or_
 
 from constants import FindID
