@@ -1,4 +1,5 @@
 import dataclasses
+import uuid
 from typing import Callable
 from misc.hashgrid import HashGrid
 import arcade as arc
@@ -7,7 +8,7 @@ from misc.vector import Vector
 
 
 class BoxBounds:
-    __slots__ = ('box', 'min_x', 'min_y', 'max_x', 'max_y')
+    __slots__ = ('box', 'min_x', 'min_y', 'max_x', 'max_y', 'uuid')
 
     def __init__(self, min_x, min_y, max_x, max_y):
         self.min_x = min_x
@@ -15,6 +16,7 @@ class BoxBounds:
         self.max_x = max_x
         self.max_y = max_y
         self.box = geo.box(min_x, min_y, max_x, max_y)
+        self.uuid = uuid.uuid4()
 
     @property
     def bottom_left(self):
@@ -50,7 +52,7 @@ class BoxBounds:
                 raise ValueError(f'invalid type for __contains__ in {self.__class__.__name__}: {type(item)}')
 
     def __hash__(self):
-        return hash((int(self.min_x), int(self.max_x), int(self.min_y), int(self.max_y)))
+        return hash((int(self.min_x), int(self.max_x), int(self.min_y), int(self.max_y), self.uuid))
 
 
 def create_box(v1, v2):
@@ -79,7 +81,7 @@ def render_bounds(bb: BoxBounds, color, thickness=1):
 class Interactable:
     id: str = dataclasses.field(hash=True)
     bounds: BoxBounds = dataclasses.field(hash=True)
-    render: Callable = None
+    render: Callable = dataclasses.field(hash=False, default=None)
 
     @property
     def bounds_tuple(self):
