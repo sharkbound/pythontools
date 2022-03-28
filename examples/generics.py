@@ -2,7 +2,6 @@ from typing import Generic, TypeVar, Generator
 
 T = TypeVar('T')
 
-
 class ItemCollection(Generic[T]):
     def __init__(self, *items: T):
         self.items = items
