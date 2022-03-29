@@ -13,7 +13,7 @@ from misc.vector import Vector
 
 WIN_WIDTH = 800
 WIN_HEIGHT = 600
-ANT_COUNT = 100
+ANT_COUNT = 200
 
 
 class BoxBounds:
