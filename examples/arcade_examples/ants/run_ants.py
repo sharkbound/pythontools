@@ -13,7 +13,7 @@ from misc.vector import Vector
 
 WIN_WIDTH = 800
 WIN_HEIGHT = 600
-ANT_COUNT = 200
+ANT_COUNT = 5000
 
 
 class BoxBounds:
@@ -82,24 +82,6 @@ def create_box_args(x1, y1, x2, y2):
     )
 
 
-def render_bounds(bb: BoxBounds, color, thickness=1):
-    arc.draw_rectangle_outline(bb.center.x, bb.center.y, bb.size.x, bb.size.y, color, border_width=thickness)
-
-
-@dataclasses.dataclass(unsafe_hash=True)
-class Interactable:
-    id: str = dataclasses.field(hash=True)
-    bounds: BoxBounds = dataclasses.field(hash=True)
-    render: Callable = dataclasses.field(hash=False, default=None)
-
-    @property
-    def bounds_tuple(self):
-        return self.bounds.bottom_left, self.bounds.top_right
-
-    def __repr__(self):
-        return f'<{type(self).__name__} id={self.id} size={self.bounds.size}>'
-
-
 class Ant(namedtuple('Ant', 'id pos size color velocity')):
     @property
     def bounds(self):
@@ -115,12 +97,12 @@ class View(arc.View):
     def __init__(self):
         super().__init__()
         arc.set_background_color((0, 0, 0))
-        self.grid = HashGrid(100)
+        self.grid = HashGrid(10)
         self.ants = {
             id: Ant(
                 id=id,
                 pos=np.array([rx, ry]),
-                size=random.randint(1, 30),
+                size=random.randint(1, 10),
                 color=np.random.default_rng().integers(0, 255, 3),
                 velocity=np.random.default_rng().uniform(-150, 150, 2),
             )
@@ -130,24 +112,26 @@ class View(arc.View):
                 np.random.default_rng().uniform(0, WIN_HEIGHT, ANT_COUNT)
             ))
         }
+        for ant in self.ants.values():
+            self.grid.add(ant.id, (ant.bounds.bottom_left, ant.bounds.top_right))
 
     @property
     def mouse(self):
         return Vector(self.window._mouse_x, self.window._mouse_y)
 
     def on_update(self, delta_time: float):
-        self.grid.clear()
-
-        for ant in self.ants.values():
-            if (ant.pos[0] < 0 and ant.velocity[0] < 0) or (ant.pos[0] > WIN_WIDTH - 1 and ant.velocity[0] > 0):
-                ant.velocity[0] *= -1
-            if (ant.pos[1] < 0 and ant.velocity[1] < 0) or (ant.pos[1] > WIN_HEIGHT - 1 and ant.velocity[1] > 0):
-                ant.velocity[1] *= -1
-
-            ant.pos[0] += ant.velocity[0] * delta_time
-            ant.pos[1] += ant.velocity[1] * delta_time
-
-            self.grid.add(ant.id, (ant.bounds.bottom_left, ant.bounds.top_right))
+        # self.grid.clear()
+        #
+        # for ant in self.ants.values():
+        #     if (ant.pos[0] < 0 and ant.velocity[0] < 0) or (ant.pos[0] > WIN_WIDTH - 1 and ant.velocity[0] > 0):
+        #         ant.velocity[0] *= -1
+        #     if (ant.pos[1] < 0 and ant.velocity[1] < 0) or (ant.pos[1] > WIN_HEIGHT - 1 and ant.velocity[1] > 0):
+        #         ant.velocity[1] *= -1
+        #
+        #     ant.pos[0] += ant.velocity[0] * delta_time
+        #     ant.pos[1] += ant.velocity[1] * delta_time
+        #
+        #     self.grid.add(ant.id, (ant.bounds.bottom_left, ant.bounds.top_right))
 
         self.window.set_caption(str(1 / delta_time))
 
@@ -161,8 +145,9 @@ class View(arc.View):
         arc.draw_rectangle_outline(mouse.x, mouse.y, RADIUS, RADIUS, arc.color.TEAL)
         mouse_bounds = create_box(mouse - RADIUS / 2, mouse + RADIUS / 2)
         for ant in map(self.ants.get, self.grid.get_objects_for_area((mouse_bounds.bottom_left, mouse_bounds.top_right))):
-            if ant.bounds.box in mouse_bounds:
-                arc.draw_circle_filled(*ant.pos, ant.size, ant.color)
+            # if ant.bounds.box in mouse_bounds:
+            arc.draw_circle_filled(*ant.pos, ant.size, ant.color)
+        print(len(self.grid._contents))
 
 
 win = arc.Window(width=WIN_WIDTH, height=WIN_HEIGHT)
