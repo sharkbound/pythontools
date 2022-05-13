@@ -1,8 +1,6 @@
 from itertools import zip_longest
 from typing import Callable, Any, Sized, Sequence
 
-from icecream import ic
-
 
 class ArgParserResult:
     def __init__(self, validators: Sequence[Callable], names: Sequence[str], args: Sequence[Any]):
@@ -56,7 +54,7 @@ class ArgParserResult:
             if item in self.invalid_args:
                 return self.invalid_args[item]
 
-        if isinstance(item, int):
+        if isinstance(item, (int, slice)):
             try:
                 return self.unnamed_args[item]
             except:
@@ -82,4 +80,7 @@ if __name__ == '__main__':
     parser = ArgParser([int, int, int], ['a', 'b', 'c'])
     args = parser.parse(('1', 'b', '2', '4', 7, 9))
 
+    from icecream import ic
+
     ic(args.get_args('a', 'b'))
+    ic(args.a, args.b, args.c)
