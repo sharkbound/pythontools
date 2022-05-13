@@ -86,8 +86,8 @@ class HashGrid:
     def get_objects_for_point(self, point):
         point = self.to_bucket_coord(point)
         if point in self._contents:
-            return tuple(self._contents[point])
-        return ()
+            return set(self._contents[point])
+        return set()
 
     def get_objects_for_area(self, bounds):
         objects = []
