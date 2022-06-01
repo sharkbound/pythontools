@@ -39,7 +39,8 @@ class FileSelectors:
         self.key_bindings.add(Keys.Enter, eager=True)(self.on_enter_pressed)
         self.styles = Style([
             ('filter', 'bg:#000000 fg:#ffff00'),
-            ('selected', 'fg:#ff0000')
+            ('selected', 'fg:#ff0000'),
+            ('nofiles', 'fg:#0000ff'),
         ])
         self.session, self.app = create_app(self.key_bindings, self.styles, self.tokens)
         self.path = Path(os.getcwd())
@@ -59,7 +60,7 @@ class FileSelectors:
         self._dir_items = [
             path
             for path in (self._dir_items if self.path == self._prev_path else self.path.glob('*'))
-            if not self._filter or self._filter in path.name
+            if not self._filter or self._filter in path.name.casefold()
         ]
         self._index.update_items(self._dir_items)
 
@@ -69,7 +70,7 @@ class FileSelectors:
             self._filter = self._filter[:-1]
             self._update_items_using_current_path()
             return
-        self._filter += key.data
+        self._filter += key.data.casefold()
         self._update_items_using_current_path()
 
     def on_up_pressed(self, key):
@@ -96,15 +97,29 @@ class FileSelectors:
         #     print(f'FOUND: {self.path}')
 
     def tokens(self):
-        return [('class:filter', f'{self._filter if self._filter else "[NO FILTER: TYPE TO APPLY FILTER]"}\n\n'),
-                ['', f'[PATH: {self.path}]\n\n']] + [
-                   (
-                       'class:selected' if index == self._index.index else '',
-                       f'{"[DIR ]" if path.is_dir() else "[FILE]"} - {path.name}\n'
-                   )
-                   for index, path in enumerate(self._dir_items)
-                   if not self._filter or self._filter in path.name
-               ]
+        ret = [
+            ('', 'CONTROLS: \nLEFT ARROW = BACK A DIRECTORY'
+                 ' / RIGHT ARROW = EXPAND THE SELECTED'
+                 ' / UP ARROW = MOVE UP'
+                 ' / DOWN ARROW = MOVE DOWN\n\n'
+             ),
+            ('class:filter', f'{self._filter if self._filter else "[NO FILTER: TYPE TO APPLY FILTER]"}\n\n'),
+            ('', f'[PATH: {self.path}]\n\n'),
+
+        ]
+
+        if self._dir_items:
+            ret.extend(
+                (
+                    'class:selected' if index == self._index.index else '',
+                    f'{"[DIR ]" if path.is_dir() else "[FILE]"} - {path.name}\n'
+                )
+                for index, path in enumerate(self._dir_items)
+                if not self._filter or self._filter in path.name.casefold()
+            )
+        else:
+            ret.append(('class:nofiles', '[NO FILES FOUND FOR CURRENT PATH]'))
+        return ret
 
     def start(self):
         _fix_unecessary_blank_lines(self.session)
