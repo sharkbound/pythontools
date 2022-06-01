@@ -23,6 +23,10 @@ class IndexSelector:
     def current_item(self):
         return self.items[self.index]
 
+    def update_items(self, items):
+        self.index = 0
+        self.items = items
+
 
 class FileSelectors:
     def __init__(self):
@@ -31,6 +35,8 @@ class FileSelectors:
         self.key_bindings.add(Keys.ControlC, eager=True)(lambda _: self.app.exit())
         self.key_bindings.add(Keys.Up, eager=True)(self.on_up_pressed)
         self.key_bindings.add(Keys.Down, eager=True)(self.on_down_pressed)
+        self.key_bindings.add(Keys.Left, eager=True)(self.on_left_pressed)
+        self.key_bindings.add(Keys.Right, eager=True)(self.on_right_pressed)
         self.key_bindings.add(Keys.Enter, eager=True)(self.on_enter_pressed)
         self.styles = Style([
             ('filter', 'bg:#000000 fg:#ffff00'),
@@ -41,6 +47,22 @@ class FileSelectors:
         self._dir_items = list(self.path.glob('*'))
         self._filter = ''
         self._index = IndexSelector(self._dir_items)
+        self._prev_path = self.path
+
+    def _update_path(self, new_path):
+        self._prev_path = self.path
+        self.path = new_path
+
+    def _update_items_using_current_path(self):
+        previous_path = self.path
+        self._dir_items = [
+            path
+            for path in (self._dir_items if self.path == self._prev_path else self.path.glob('*'))
+            if not self._filter or self._filter in path.name
+        ]
+        self._index.update_items(self._dir_items)
+        self._filter = ''
+        self._prev_path = previous_path
 
     def on_key_press(self, keys: KeyPressEvent):
         key = keys.key_sequence[0]
@@ -48,6 +70,7 @@ class FileSelectors:
             self._filter = self._filter[:-1]
             return
         self._filter += key.data
+        self._update_items_using_current_path()
 
     def on_up_pressed(self, key):
         self._index.up()
@@ -55,15 +78,22 @@ class FileSelectors:
     def on_down_pressed(self, key):
         self._index.down()
 
+    def on_left_pressed(self, key):
+        self._update_path(self.path.parent)
+        self._update_items_using_current_path()
+
+    def on_right_pressed(self, key):
+        if self._index.current_item.is_dir():
+            self._update_path(self._index.current_item)
+            self._update_items_using_current_path()
+
     def on_enter_pressed(self, key):
         if self.path.is_dir():
-            self.path = self._index.current_item
-            self._dir_items = list(self.path.glob('*'))
-            self._index.items = self._dir_items
-            self._index.index = 0
-        elif self.path.is_file():
-            # todo, blackout issue, erase previous items
-            print(f'FOUND: {self.path}')
+            self._update_path(self._index.current_item)
+            self._update_items_using_current_path()
+        # elif self.path.is_file():
+        #     # todo, blackout issue, erase previous items
+        #     print(f'FOUND: {self.path}')
 
     def tokens(self):
         return [('class:filter', f'{self._filter}\n')] + [
