@@ -5,7 +5,6 @@ import prompt_toolkit as ptt
 from prompt_toolkit.key_binding import KeyBindings, KeyPressEvent
 from prompt_toolkit.keys import Keys
 from prompt_toolkit.styles import Style
-import questionary
 
 
 class IndexSelector:
@@ -53,21 +52,22 @@ class FileSelectors:
         self._prev_path = self.path
         self.path = new_path
 
-    def _update_items_using_current_path(self):
-        previous_path = self.path
+    def _update_items_using_current_path(self, reset_filter=False):
+        if reset_filter:
+            self._filter = ''
+
         self._dir_items = [
             path
             for path in (self._dir_items if self.path == self._prev_path else self.path.glob('*'))
             if not self._filter or self._filter in path.name
         ]
         self._index.update_items(self._dir_items)
-        self._filter = ''
-        self._prev_path = previous_path
 
     def on_key_press(self, keys: KeyPressEvent):
         key = keys.key_sequence[0]
         if key.key is Keys.ControlH:
             self._filter = self._filter[:-1]
+            self._update_items_using_current_path()
             return
         self._filter += key.data
         self._update_items_using_current_path()
@@ -80,30 +80,31 @@ class FileSelectors:
 
     def on_left_pressed(self, key):
         self._update_path(self.path.parent)
-        self._update_items_using_current_path()
+        self._update_items_using_current_path(reset_filter=True)
 
     def on_right_pressed(self, key):
         if self._index.current_item.is_dir():
             self._update_path(self._index.current_item)
-            self._update_items_using_current_path()
+            self._update_items_using_current_path(reset_filter=True)
 
     def on_enter_pressed(self, key):
         if self.path.is_dir():
             self._update_path(self._index.current_item)
-            self._update_items_using_current_path()
+            self._update_items_using_current_path(reset_filter=True)
         # elif self.path.is_file():
         #     # todo, blackout issue, erase previous items
         #     print(f'FOUND: {self.path}')
 
     def tokens(self):
-        return [('class:filter', f'{self._filter}\n')] + [
-            (
-                'class:selected' if index == self._index.index else '',
-                f'{"[DIR ]" if path.is_dir() else "[FILE]"} - {path.name}\n'
-            )
-            for index, path in enumerate(self._dir_items)
-            if not self._filter or self._filter in path.name
-        ]
+        return [('class:filter', f'{self._filter if self._filter else "[NO FILTER: TYPE TO APPLY FILTER]"}\n\n'),
+                ['', f'[PATH: {self.path}]\n\n']] + [
+                   (
+                       'class:selected' if index == self._index.index else '',
+                       f'{"[DIR ]" if path.is_dir() else "[FILE]"} - {path.name}\n'
+                   )
+                   for index, path in enumerate(self._dir_items)
+                   if not self._filter or self._filter in path.name
+               ]
 
     def start(self):
         _fix_unecessary_blank_lines(self.session)
