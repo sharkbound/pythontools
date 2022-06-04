@@ -1,10 +1,17 @@
 import os
 from pathlib import Path
+from typing import Optional, Callable
 
 import prompt_toolkit as ptt
+from icecream import ic
 from prompt_toolkit.key_binding import KeyBindings, KeyPressEvent
 from prompt_toolkit.keys import Keys
 from prompt_toolkit.styles import Style
+
+import logging
+
+# LOGGER = logging.getLogger('filelogger')
+logging.basicConfig(filename='logging.log')
 
 
 class IndexSelector:
@@ -28,7 +35,8 @@ class IndexSelector:
 
 
 class FileSelectors:
-    def __init__(self):
+    def __init__(self, selection_validator: Callable[[Path], bool] = lambda _: True):
+        self.selection_validator = selection_validator
         self.key_bindings = ptt.key_binding.KeyBindings()
         self.key_bindings.add(Keys.Any, eager=True)(self.on_key_press)
         self.key_bindings.add(Keys.ControlC, eager=True)(lambda _: self.app.exit())
@@ -48,18 +56,20 @@ class FileSelectors:
         self._filter = ''
         self._index = IndexSelector(self._dir_items)
         self._prev_path = self.path
+        self._result: Optional[Path] = None
 
     def _update_path(self, new_path):
         self._prev_path = self.path
         self.path = new_path
 
-    def _update_items_using_current_path(self, reset_filter=False):
+    def _update_items_using_current_path(self, reset_filter=False, use_cached_files=False):
         if reset_filter:
             self._filter = ''
 
+        logging.error(f'{self.path} / {self._prev_path} / {self.path == self._prev_path}')
         self._dir_items = [
             path
-            for path in (self._dir_items if self.path == self._prev_path else self.path.glob('*'))
+            for path in (self._dir_items if use_cached_files else self.path.glob('*'))
             if not self._filter or self._filter in path.name.casefold()
         ]
         self._index.update_items(self._dir_items)
@@ -68,33 +78,33 @@ class FileSelectors:
         key = keys.key_sequence[0]
         if key.key is Keys.ControlH:
             self._filter = self._filter[:-1]
-            self._update_items_using_current_path()
+            self._update_items_using_current_path(use_cached_files=True)
             return
         self._filter += key.data.casefold()
-        self._update_items_using_current_path()
+        self._update_items_using_current_path(use_cached_files=True)
 
-    def on_up_pressed(self, key):
+    @property
+    def selected_item(self):
+        return self._index.current_item
+
+    def on_up_pressed(self, _):
         self._index.up()
 
-    def on_down_pressed(self, key):
+    def on_down_pressed(self, _):
         self._index.down()
 
-    def on_left_pressed(self, key):
+    def on_left_pressed(self, _):
         self._update_path(self.path.parent)
         self._update_items_using_current_path(reset_filter=True)
 
-    def on_right_pressed(self, key):
-        if self._index.current_item.is_dir():
-            self._update_path(self._index.current_item)
+    def on_right_pressed(self, _):
+        if self.selected_item.is_dir():
+            self._update_path(self.selected_item)
             self._update_items_using_current_path(reset_filter=True)
 
-    def on_enter_pressed(self, key):
-        if self.path.is_dir():
-            self._update_path(self._index.current_item)
-            self._update_items_using_current_path(reset_filter=True)
-        # elif self.path.is_file():
-        #     # todo, blackout issue, erase previous items
-        #     print(f'FOUND: {self.path}')
+    def on_enter_pressed(self, _):
+        if self.selection_validator(self.selected_item):
+            self.app.exit(result=self.selected_item)
 
     def tokens(self):
         ret = [
@@ -123,7 +133,7 @@ class FileSelectors:
 
     def start(self):
         _fix_unecessary_blank_lines(self.session)
-        self.app.run()
+        return self.app.run()
 
 
 def create_app(key_bindings, styles, token_func):
@@ -142,8 +152,8 @@ def _fix_unecessary_blank_lines(ps: ptt.PromptSession) -> None:
     from prompt_toolkit.filters import Always
     # this forces the main window to stay as small as possible, avoiding empty lines in selections
     ps.layout.current_window.dont_extend_height = Always()
-    # disables the cursor, it is not used actively on the quiz example
+    # disables the cursor
     ps.layout.current_window.always_hide_cursor = Always()
 
 
-FileSelectors().start()
+FileSelectors(selection_validator=lambda p: p.suffix == '.mp4').start()
