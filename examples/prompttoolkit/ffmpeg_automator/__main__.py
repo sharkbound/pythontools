@@ -34,7 +34,7 @@ class IndexSelector:
         self.items = items
 
 
-class FileSelectors:
+class FileSelector:
     def __init__(self, selection_validator: Callable[[Path], bool] = lambda _: True):
         self.selection_validator = selection_validator
         self.key_bindings = ptt.key_binding.KeyBindings()
@@ -49,6 +49,7 @@ class FileSelectors:
             ('filter', 'bg:#000000 fg:#ffff00'),
             ('selected', 'fg:#ff0000'),
             ('nofiles', 'fg:#0000ff'),
+            ('final', 'fg:#ffff00'),
         ])
         self.session, self.app = create_app(self.key_bindings, self.styles, self.tokens)
         self.path = Path(os.getcwd())
@@ -104,9 +105,13 @@ class FileSelectors:
 
     def on_enter_pressed(self, _):
         if self.selection_validator(self.selected_item):
+            self._result = self.selected_item
             self.app.exit(result=self.selected_item)
 
     def tokens(self):
+        if self._result is not None:
+            return [('class:final', f'selected path: {self._result}')]
+
         ret = [
             ('', 'CONTROLS: \nLEFT ARROW = BACK A DIRECTORY'
                  ' / RIGHT ARROW = EXPAND THE SELECTED'
@@ -156,4 +161,6 @@ def _fix_unecessary_blank_lines(ps: ptt.PromptSession) -> None:
     ps.layout.current_window.always_hide_cursor = Always()
 
 
-FileSelectors(selection_validator=lambda p: p.suffix == '.mp4').start()
+print('please select am mp4 file: ')
+result = FileSelector(selection_validator=lambda p: p.suffix == '.mp4' or True).start()
+input(f'you choose "{result}"!')
