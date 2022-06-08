@@ -3,15 +3,9 @@ from pathlib import Path
 from typing import Optional, Callable
 
 import prompt_toolkit as ptt
-from icecream import ic
 from prompt_toolkit.key_binding import KeyBindings, KeyPressEvent
 from prompt_toolkit.keys import Keys
 from prompt_toolkit.styles import Style
-
-import logging
-
-# LOGGER = logging.getLogger('filelogger')
-logging.basicConfig(filename='logging.log')
 
 
 class IndexSelector:
@@ -190,8 +184,3 @@ def _fix_unnecessary_blank_lines(ps: ptt.PromptSession) -> None:
     ps.layout.current_window.dont_extend_height = Always()
     # disables the cursor
     ps.layout.current_window.always_hide_cursor = Always()
-
-
-print('please select am mp4 file: ')
-result = FileSelector(selection_validator=lambda p: p.suffix == '.mp4' or True).start()
-input(f'you choose "{result}"!')
