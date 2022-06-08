@@ -34,6 +34,14 @@ class IndexSelector:
         self.items = items
 
 
+def get_page(items, page, items_per_page):
+    return items[page * items_per_page: (page + 1) * items_per_page]
+
+
+def get_page_count(items, items_per_page):
+    return int(len(items) / items_per_page) + 1
+
+
 class FileSelector:
     def __init__(self, selection_validator: Callable[[Path], bool] = lambda _: True):
         self.selection_validator = selection_validator
@@ -45,44 +53,56 @@ class FileSelector:
         self.key_bindings.add(Keys.Left, eager=True)(self.on_left_pressed)
         self.key_bindings.add(Keys.Right, eager=True)(self.on_right_pressed)
         self.key_bindings.add(Keys.Enter, eager=True)(self.on_enter_pressed)
+        self.key_bindings.add('[', eager=True)(self.on_left_bracket_pressed)
+        self.key_bindings.add(']', eager=True)(self.on_right_bracket_pressed)
         self.styles = Style([
             ('filter', 'bg:#000000 fg:#ffff00'),
             ('selected', 'fg:#ff0000'),
             ('nofiles', 'fg:#0000ff'),
             ('final', 'fg:#ffff00'),
+            ('pageinfo', 'fg:#ff00ff'),
         ])
         self.session, self.app = create_app(self.key_bindings, self.styles, self.tokens)
         self.path = Path(os.getcwd())
         self._dir_items = list(self.path.glob('*'))
+        self._displayed_dir_items = self._dir_items
         self._filter = ''
         self._index = IndexSelector(self._dir_items)
-        self._prev_path = self.path
         self._result: Optional[Path] = None
+        self._current_page = 0
+        self._items_per_page = 15
+        self._page_count = get_page_count(self._dir_items, self._items_per_page)
+
+    def update_page(self, page=None, change=None):
+        pass
 
     def _update_path(self, new_path):
-        self._prev_path = self.path
         self.path = new_path
 
-    def _update_items_using_current_path(self, reset_filter=False, use_cached_files=False):
+    def _update_items_using_current_path(self, reset_filter=False, update_files=False):
         if reset_filter:
             self._filter = ''
 
-        logging.error(f'{self.path} / {self._prev_path} / {self.path == self._prev_path}')
-        self._dir_items = [
+        if update_files:
+            self._dir_items = list(self.path.glob('*'))
+            self._current_page = 0
+            self._page_count = get_page_count(self._dir_items, self._items_per_page)
+
+        self._displayed_dir_items = get_page([
             path
-            for path in (self._dir_items if use_cached_files else self.path.glob('*'))
+            for path in self._dir_items
             if not self._filter or self._filter in path.name.casefold()
-        ]
-        self._index.update_items(self._dir_items)
+        ], self._current_page, self._items_per_page)
+        self._index.update_items(self._displayed_dir_items)
 
     def on_key_press(self, keys: KeyPressEvent):
         key = keys.key_sequence[0]
         if key.key is Keys.ControlH:
             self._filter = self._filter[:-1]
-            self._update_items_using_current_path(use_cached_files=True)
+            self._update_items_using_current_path()
             return
         self._filter += key.data.casefold()
-        self._update_items_using_current_path(use_cached_files=True)
+        self._update_items_using_current_path()
 
     @property
     def selected_item(self):
@@ -96,17 +116,25 @@ class FileSelector:
 
     def on_left_pressed(self, _):
         self._update_path(self.path.parent)
-        self._update_items_using_current_path(reset_filter=True)
+        self._update_items_using_current_path(reset_filter=True, update_files=True)
 
     def on_right_pressed(self, _):
         if self.selected_item.is_dir():
             self._update_path(self.selected_item)
-            self._update_items_using_current_path(reset_filter=True)
+            self._update_items_using_current_path(reset_filter=True, update_files=True)
 
     def on_enter_pressed(self, _):
         if self.selection_validator(self.selected_item):
             self._result = self.selected_item
             self.app.exit(result=self.selected_item)
+
+    def on_left_bracket_pressed(self, _):
+        self._current_page = max(self._current_page - 1, 0)
+        self._update_items_using_current_path()
+
+    def on_right_bracket_pressed(self, _):
+        self._current_page = min(self._current_page + 1, self._page_count - 1)
+        self._update_items_using_current_path()
 
     def tokens(self):
         if self._result is not None:
@@ -118,26 +146,29 @@ class FileSelector:
                  ' / UP ARROW = MOVE UP'
                  ' / DOWN ARROW = MOVE DOWN\n\n'
              ),
-            ('class:filter', f'{self._filter if self._filter else "[NO FILTER: TYPE TO APPLY FILTER]"}\n\n'),
+            ('class:filter', f'{self._filter if self._filter else "[NO FILTER: TYPE TO APPLY FILTER]"}\n'),
             ('', f'[PATH: {self.path}]\n\n'),
-
         ]
 
-        if self._dir_items:
+        if self._displayed_dir_items:
             ret.extend(
                 (
                     'class:selected' if index == self._index.index else '',
                     f'{"[DIR ]" if path.is_dir() else "[FILE]"} - {path.name}\n'
                 )
-                for index, path in enumerate(self._dir_items)
+                for index, path in enumerate(self._displayed_dir_items)
                 if not self._filter or self._filter in path.name.casefold()
             )
+            ret.append((
+                'class:pageinfo',
+                f'\n\nPAGE [{self._current_page + 1} / {self._page_count}]\n( [ ) to go back a page, ( ] ) to go forward a page'
+            ))
         else:
             ret.append(('class:nofiles', '[NO FILES FOUND FOR CURRENT PATH]'))
         return ret
 
     def start(self):
-        _fix_unecessary_blank_lines(self.session)
+        _fix_unnecessary_blank_lines(self.session)
         return self.app.run()
 
 
@@ -149,7 +180,7 @@ def create_app(key_bindings, styles, token_func):
 
 
 # from questionary on pypi, i shorted it from the original
-def _fix_unecessary_blank_lines(ps: ptt.PromptSession) -> None:
+def _fix_unnecessary_blank_lines(ps: ptt.PromptSession) -> None:
     """This is a fix for additional empty lines added by prompt toolkit.
 
     This assumes the layout of the default session doesn't change, if it
