@@ -146,7 +146,7 @@ class FileSelector:
                  ' / UP ARROW = MOVE UP'
                  ' / DOWN ARROW = MOVE DOWN\n\n'
              ),
-            ('class:filter', f'{self._filter if self._filter else "[NO FILTER: TYPE TO APPLY FILTER]"}\n'),
+            ('class:filter', f'[FILTER: {self._filter if self._filter else "[NO FILTER, TYPE TO APPLY FILTER]"}]\n'),
             ('', f'[PATH: {self.path}]\n\n'),
         ]
 
