@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Optional, Callable
+from typing import Optional, Callable, Union
 
 import prompt_toolkit as ptt
 from prompt_toolkit.key_binding import KeyBindings, KeyPressEvent
@@ -37,11 +37,14 @@ def get_page_count(items, items_per_page):
 
 
 class FileSelector:
+    NOT_SET = object()
+
     def __init__(self, selection_validator: Callable[[Path], bool] = lambda _: True):
         self.selection_validator = selection_validator
         self.key_bindings = ptt.key_binding.KeyBindings()
         self.key_bindings.add(Keys.Any, eager=True)(self.on_key_press)
-        self.key_bindings.add(Keys.ControlC, eager=True)(lambda _: self.app.exit())
+        self.key_bindings.add(Keys.ControlC, eager=True)(lambda _: setattr(self, '_result', None))
+        self.key_bindings.add(Keys.ControlQ, eager=True)(lambda _: setattr(self, '_result', None))
         self.key_bindings.add(Keys.Up, eager=True)(self.on_up_pressed)
         self.key_bindings.add(Keys.Down, eager=True)(self.on_down_pressed)
         self.key_bindings.add(Keys.Left, eager=True)(self.on_left_pressed)
@@ -55,6 +58,7 @@ class FileSelector:
             ('nofiles', 'fg:#0000ff'),
             ('final', 'fg:#ffff00'),
             ('pageinfo', 'fg:#ff00ff'),
+            ('final_terminated', 'fg:#ff0000'),
         ])
         self.session, self.app = create_app(self.key_bindings, self.styles, self.tokens)
         self.path = Path(os.getcwd())
@@ -62,7 +66,7 @@ class FileSelector:
         self._displayed_dir_items = self._dir_items
         self._filter = ''
         self._index = IndexSelector(self._dir_items)
-        self._result: Optional[Path] = None
+        self._result: Union[object, Optional[Path]] = self.__class__.NOT_SET
         self._current_page = 0
         self._items_per_page = 15
         self._page_count = get_page_count(self._dir_items, self._items_per_page)
@@ -118,7 +122,7 @@ class FileSelector:
             self._update_items_using_current_path(reset_filter=True, update_files=True)
 
     def on_enter_pressed(self, _):
-        if self.selection_validator(self.selected_item):
+        if self._index.items and self.selection_validator(self.selected_item):
             self._result = self.selected_item
             self.app.exit(result=self.selected_item)
 
@@ -131,7 +135,9 @@ class FileSelector:
         self._update_items_using_current_path()
 
     def tokens(self):
-        if self._result is not None:
+        if self._result is not self.__class__.NOT_SET:
+            if self._result is None:
+                return [('class:final_terminated', 'Dialog cancelled by user input (CTRL+C) OR (CTRL+Q)')]
             return [('class:final', f'selected path: {self._result}')]
 
         ret = [
