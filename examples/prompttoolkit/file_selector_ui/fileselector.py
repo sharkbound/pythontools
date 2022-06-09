@@ -43,8 +43,8 @@ class FileSelector:
         self.selection_validator = selection_validator
         self.key_bindings = ptt.key_binding.KeyBindings()
         self.key_bindings.add(Keys.Any, eager=True)(self.on_key_press)
-        self.key_bindings.add(Keys.ControlC, eager=True)(lambda _: setattr(self, '_result', None))
-        self.key_bindings.add(Keys.ControlQ, eager=True)(lambda _: setattr(self, '_result', None))
+        self.key_bindings.add(Keys.ControlC, eager=True)(lambda _: self._exit_app())
+        self.key_bindings.add(Keys.ControlQ, eager=True)(lambda _: self._exit_app())
         self.key_bindings.add(Keys.Up, eager=True)(self.on_up_pressed)
         self.key_bindings.add(Keys.Down, eager=True)(self.on_down_pressed)
         self.key_bindings.add(Keys.Left, eager=True)(self.on_left_pressed)
@@ -70,6 +70,10 @@ class FileSelector:
         self._current_page = 0
         self._items_per_page = 15
         self._page_count = get_page_count(self._dir_items, self._items_per_page)
+
+    def _exit_app(self):
+        self._result = None
+        self.app.exit(result=None)
 
     def update_page(self, page=None, change=None):
         pass
