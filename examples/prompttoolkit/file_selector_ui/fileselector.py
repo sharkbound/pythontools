@@ -39,7 +39,7 @@ def get_page_count(items, items_per_page):
 class FileSelector:
     NOT_SET = object()
 
-    def __init__(self, selection_validator: Callable[[Path], bool] = lambda _: True):
+    def __init__(self, selection_validator: Callable[[Path], bool] = lambda _: True, initial_path: Path = None):
         self.selection_validator = selection_validator
         self.key_bindings = ptt.key_binding.KeyBindings()
         self.key_bindings.add(Keys.Any, eager=True)(self.on_key_press)
@@ -61,7 +61,7 @@ class FileSelector:
             ('final_terminated', 'fg:#ff0000'),
         ])
         self.session, self.app = create_app(self.key_bindings, self.styles, self.tokens)
-        self.path = Path(os.getcwd())
+        self.path = initial_path or Path(os.getcwd())
         self._dir_items = list(self.path.glob('*'))
         self._displayed_dir_items = self._dir_items
         self._filter = ''
