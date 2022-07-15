@@ -4,6 +4,7 @@
 * [https://plotly.com/python/legend/](https://plotly.com/python/legend/)
 * [https://plotly.com/python/](https://plotly.com/python/)
 * [https://plotly.com/python/figure-labels/](https://plotly.com/python/figure-labels/)
+* [Is Plotly The Better Matplotlib? [YOUTUBE]](https://www.youtube.com/watch?v=GzUVacnrgFc)
 
 ## disabling/enabling lines/markers with scatter plots:
 * note, this refers to using this import : `import plotly.graph_objects as go`
