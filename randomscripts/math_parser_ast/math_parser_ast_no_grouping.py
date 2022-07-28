@@ -29,8 +29,8 @@ class ValueType(IntFlag):
 
     EQUALITY_OPERATOR = OPERATOR | EQUALITY
     GROUPING_OPERATOR = OPERATOR | GROUPING
-    GROUPING_START_OPERATOR = GROUPING_OPERATOR | GROUPING_START
-    GROUPING_END_OPERATOR = GROUPING_OPERATOR | GROUPING_END
+    GROUPING_START_OPERATOR = GROUPING_OPERATOR | GROUPING_START | GROUPING
+    GROUPING_END_OPERATOR = GROUPING_OPERATOR | GROUPING_END | GROUPING
     MATH_OPERATOR = OPERATOR | MATH_OPERATION
 
     @property
@@ -92,6 +92,8 @@ class ValueWithIndexShift(NamedTuple):
 def values_index_shift_to_friendly_str(*values: ValueWithIndexShift):
     for value in values:
         yield f'<ValueWithIndexShift VALUE={value.value_as_str!r} TYPE={value.type!r}>'
+
+
 def is_variable_char(char):
     return char in ALL_VARIABLE_CHARS
 
@@ -108,6 +110,8 @@ def is_operator_sequence(data, i):
 def is_literal(data, i):
     value = peek_ahead(data, i, NUMBER_LITERAL_CHARS.__contains__)
     return value.success and RE_INT.match(value.value_as_str)
+
+
 def _read_and_assign_type_if_success(data, i, predicate, type_if_success, limit=None):
     value = peek_ahead(data, i, predicate, limit=limit)
     if value.success:
@@ -152,6 +156,7 @@ def read_literal(data, index):
         return value
 
     return ValueWithIndexShift.invalid()
+
 
 def peek_ahead(data, index, predicate, limit=None):
     chars = []
@@ -203,4 +208,5 @@ def parse_math(equation):
     return groupings
 
 
-symbols = parse_math('(((x + y) + -5 + 6)) == 81')
+symbols = parse_math('()')
+[s for s in symbols]
