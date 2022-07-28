@@ -1,5 +1,5 @@
 import re
-from collections import namedtuple
+from collections import namedtuple, defaultdict
 from enum import Flag, auto, Enum, IntFlag
 from pprint import pprint
 from string import ascii_letters
@@ -16,6 +16,7 @@ class ValueType(IntFlag):
     LITERAL = auto()
     INT = auto()
     FLOAT = auto()
+    SPACE = auto()
 
     INT_LITERAL = INT | LITERAL
     FLOAT_LITERAL = FLOAT | LITERAL
@@ -46,7 +47,7 @@ MATH_OPERATORS = {'*', '/', '-', '+', '^'}
 ALL_OPERATOR_CHARS = MATH_CHARS | EQUALITY_CHARS | GROUPING_CHARS
 ALL_VARIABLE_CHARS = set(ascii_letters) | {'_'}
 
-ALL_OPERATORS = MATH_OPERATORS | EQUALITY_OPERATORS
+ALL_OPERATORS = MATH_OPERATORS | EQUALITY_OPERATORS | GROUPING_CHARS
 
 RE_INT = re.compile(r'^([-]?)(\d+)$')
 
@@ -108,6 +109,8 @@ def _impl_is_literal_check(value: 'PeekAheadProgress'):
 
 
 def is_literal(data, i):
+    if data[i].isspace():
+        return True
     value = peek_ahead(data, i, _impl_is_literal_check)
     return value.success and RE_INT.match(value.value_as_str)
 
@@ -150,6 +153,9 @@ def read_operator(data, index):
 
 
 def read_literal(data, index):
+    if data[index].isspace():
+        return _read_and_assign_type_if_success(data, index, lambda x: x.value.isspace(), ValueType.SPACE)
+
     def _read(x: PeekAheadProgress):
         if x.value not in NUMBER_LITERAL_CHARS:
             return False
@@ -204,40 +210,39 @@ def handle_char(char, data, i):
     if is_variable_char(char):
         return read_variable(data, i)
 
-    if is_literal(data, i):
-        return read_literal(data, i)
-
     if is_operator_sequence(data, i):
         return read_operator(data, i)
+
+    if is_literal(data, i):
+        return read_literal(data, i)
 
     return ValueWithIndexShift.invalid()
 
 
+def get_bit_flags(value, enum_cls):
+    return {flag for flag in enum_cls if value & flag == flag}
+
+
 def parse_math(equation):
-    groupings = []
+    flag_index = defaultdict(list)
+    symbols = []
     equation = list(re.sub(r'\s+', ' ', equation))
     i = 0
     while i < len(equation):
         char = equation[i]
-        if char.isspace():
-            i += 1
-            continue
 
         ret = handle_char(char, equation, i)
         if not ret.success:
             i += 1
             continue
 
-        groupings.append(ret)
+        symbols.append(ret)
         i += ret.offset
+        for flag in get_bit_flags(ret.type, ValueType):
+            flag_index[flag].append(ret)
 
-    return groupings
+    return symbols, flag_index
 
 
-symbols = parse_math('---1')
+symbols, flag_index = parse_math('1 - (-1)')
 pprint(symbols)
-"""
-[ValueWithIndexShift(value=('-',), start_index=0, end_index=1, success=True, type=<ValueType.MATH_OPERATOR: 1536>),
- ValueWithIndexShift(value=('-',), start_index=1, end_index=2, success=True, type=<ValueType.MATH_OPERATOR: 1536>),
- ValueWithIndexShift(value=('-', '1'), start_index=2, end_index=4, success=True, type=<ValueType.INT_LITERAL: 24>)]
-"""
