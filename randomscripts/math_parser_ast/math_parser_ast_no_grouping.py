@@ -223,6 +223,10 @@ def get_bit_flags(value, enum_cls):
     return {flag for flag in enum_cls if value & flag == flag}
 
 
+def are_symbols_adjacent(left: ValueWithIndexShift, right: ValueWithIndexShift):
+    return left.end_index == right.start_index
+
+
 def parse_math(equation):
     flag_index = defaultdict(list)
     symbols = []
@@ -245,4 +249,5 @@ def parse_math(equation):
 
 
 symbols, flag_index = parse_math('1 - (-1)')
-pprint(symbols)
+for s1, s2 in zip(symbols, symbols[1:]):
+    ic(s1, s2, are_symbols_adjacent(s1, s2))
