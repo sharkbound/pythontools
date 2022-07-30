@@ -18,9 +18,6 @@ class ValueType(IntFlag):
     FLOAT = auto()
     SPACE = auto()
 
-    INT_LITERAL = INT | LITERAL
-    FLOAT_LITERAL = FLOAT | LITERAL
-
     GROUPING = auto()
     GROUPING_START = auto()
     GROUPING_END = auto()
@@ -28,6 +25,9 @@ class ValueType(IntFlag):
     OPERATOR = auto()
     MATH_OPERATION = auto()
     EQUALITY = auto()
+
+    INT_LITERAL = INT | LITERAL
+    FLOAT_LITERAL = FLOAT | LITERAL
 
     EQUALITY_OPERATOR = OPERATOR | EQUALITY
     GROUPING_OPERATOR = OPERATOR | GROUPING
@@ -249,5 +249,7 @@ def parse_math(equation):
 
 
 symbols, flag_index = parse_math('1 - (-1)')
-for s1, s2 in zip(symbols, symbols[1:]):
-    ic(s1, s2, are_symbols_adjacent(s1, s2))
+print([s.type for s in symbols])
+# ic(flag_index[ValueType.SPACE])
+# for s1, s2 in zip(symbols, symbols[1:]):
+#     ic(s1, s2, are_symbols_adjacent(s1, s2))
