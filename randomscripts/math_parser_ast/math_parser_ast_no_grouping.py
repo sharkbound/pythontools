@@ -1,6 +1,6 @@
 import re
 from collections import namedtuple, defaultdict
-from enum import Flag, auto, Enum, IntFlag
+from enum import Flag, auto, IntFlag
 from pprint import pprint
 from string import ascii_letters
 from typing import NamedTuple
@@ -8,32 +8,31 @@ from typing import NamedTuple
 from icecream import ic
 
 
-class ValueType(IntFlag):
+class TokenType(IntFlag):
+    # unknown
     INVALID = auto()
     NOT_SET = auto()
-
+    # basic
     VARIABLE = auto()
     LITERAL = auto()
     INT = auto()
     FLOAT = auto()
     SPACE = auto()
-
+    # grouping base
     GROUPING = auto()
-    GROUPING_START = auto()
-    GROUPING_END = auto()
-
+    # operator base
     OPERATOR = auto()
     MATH_OPERATION = auto()
     EQUALITY = auto()
-
+    # literals
     INT_LITERAL = INT | LITERAL
     FLOAT_LITERAL = FLOAT | LITERAL
-
-    EQUALITY_OPERATOR = OPERATOR | EQUALITY
-    GROUPING_OPERATOR = OPERATOR | GROUPING
-    GROUPING_START_OPERATOR = GROUPING_OPERATOR | GROUPING_START | GROUPING
-    GROUPING_END_OPERATOR = GROUPING_OPERATOR | GROUPING_END | GROUPING
+    # math
     MATH_OPERATOR = OPERATOR | MATH_OPERATION
+    # equality
+    EQUALITY_OPERATOR = OPERATOR | EQUALITY
+    # grouping
+    GROUPING_OPERATOR = OPERATOR | GROUPING
 
 
 MATH_CHARS = set('*/-+^')
@@ -57,7 +56,7 @@ class ValueWithIndexShift(NamedTuple):
     start_index: int
     end_index: int
     success: bool
-    type: ValueType = ValueType.NOT_SET
+    type: TokenType = TokenType.NOT_SET
 
     @property
     def islist(self):
@@ -77,11 +76,11 @@ class ValueWithIndexShift(NamedTuple):
 
     @classmethod
     def not_set(cls):
-        return cls(value=(), start_index=-1, end_index=-1, success=False, type=ValueType.NOT_SET)
+        return cls(value=(), start_index=-1, end_index=-1, success=False, type=TokenType.NOT_SET)
 
     @classmethod
     def invalid(cls):
-        return cls(value=(), start_index=-1, end_index=-1, success=False, type=ValueType.INVALID)
+        return cls(value=(), start_index=-1, end_index=-1, success=False, type=TokenType.INVALID)
 
 
 def values_index_shift_to_friendly_str(*values: ValueWithIndexShift):
@@ -102,7 +101,7 @@ def is_operator_sequence(data, i):
     return peeked.success or is_grouping_operator(data[i])
 
 
-def _impl_is_literal_check(value: 'PeekAheadProgress'):
+def _impl_is_literal_check(value: 'PeekProgress'):
     if value.value == '-':
         return not value.prev_chars and '-' not in value.prev_chars
     return value.value.isnumeric()
@@ -123,10 +122,7 @@ def _read_and_assign_type_if_success(data, i, predicate, type_if_success, limit=
 
 
 def read_variable(data, index):
-    return _read_and_assign_type_if_success(data, index, lambda x: x.value in ALL_VARIABLE_CHARS, ValueType.VARIABLE)
-
-
-_grouping_char_to_type = {'(': ValueType.GROUPING_START_OPERATOR, ')': ValueType.GROUPING_END_OPERATOR}
+    return _read_and_assign_type_if_success(data, index, lambda x: x.value in ALL_VARIABLE_CHARS, TokenType.VARIABLE)
 
 
 def read_operator(data, index):
@@ -134,43 +130,43 @@ def read_operator(data, index):
         data=data,
         i=index,
         predicate=lambda x: x.full_str in ALL_OPERATORS,
-        type_if_success=ValueType.OPERATOR,
+        type_if_success=TokenType.OPERATOR,
         limit=(1 if data[index] in GROUPING_CHARS else None)
     )
 
     value_as_string = value.value_as_str
 
     if value_as_string in EQUALITY_OPERATORS:
-        return value._replace(type=ValueType.EQUALITY_OPERATOR)
+        return value._replace(type=TokenType.EQUALITY_OPERATOR)
 
     if value_as_string in MATH_OPERATORS:
-        return value._replace(type=ValueType.MATH_OPERATOR)
+        return value._replace(type=TokenType.MATH_OPERATOR)
 
     if value_as_string in GROUPING_CHARS:
-        return value._replace(type=_grouping_char_to_type[value_as_string])
+        return value._replace(type=TokenType.GROUPING_OPERATOR)
 
     return ValueWithIndexShift.invalid()
 
 
 def read_literal(data, index):
     if data[index].isspace():
-        return _read_and_assign_type_if_success(data, index, lambda x: x.value.isspace(), ValueType.SPACE)
+        return _read_and_assign_type_if_success(data, index, lambda x: x.value.isspace(), TokenType.SPACE)
 
-    def _read(x: PeekAheadProgress):
+    def _read(x: PeekProgress):
         if x.value not in NUMBER_LITERAL_CHARS:
             return False
         if x.value.isnumeric():
             return True
         return x.value == '-' and not x.prev_chars
 
-    value = _read_and_assign_type_if_success(data, index, _read, ValueType.INT_LITERAL)
+    value = _read_and_assign_type_if_success(data, index, _read, TokenType.INT_LITERAL)
     if value.success and RE_INT.match(value.value_as_str):
         return value
 
     return ValueWithIndexShift.invalid()
 
 
-PeekAheadProgress = NamedTuple('PeekAheadProgress', (
+PeekProgress = NamedTuple('PeekAheadProgress', (
     ('value', str),
     ('prev_chars', list[str]),
     ('prev_str', str),
@@ -185,7 +181,7 @@ def peek_ahead(data, index, predicate, limit=None):
     while (
             (limit is None or limit > 0)
             and index < len(data)
-            and predicate(PeekAheadProgress(
+            and predicate(PeekProgress(
         value=data[index],
         prev_chars=prev_chars,
         prev_str=''.join(prev_chars),
@@ -202,7 +198,7 @@ def peek_ahead(data, index, predicate, limit=None):
         start_index=original_index,
         end_index=index,
         success=bool(prev_chars),
-        type=ValueType.NOT_SET
+        type=TokenType.NOT_SET
     )
 
 
@@ -227,6 +223,17 @@ def are_symbols_adjacent(left: ValueWithIndexShift, right: ValueWithIndexShift):
     return left.end_index == right.start_index
 
 
+# %%
+
+def _combine_check_for_negatives(symbols: list[ValueWithIndexShift]):
+    return symbols
+
+
+def combine_symbols(symbols: list[ValueWithIndexShift]):
+    _combine_check_for_negatives(symbols)
+    return symbols
+
+
 def parse_math(equation):
     flag_index = defaultdict(list)
     symbols = []
@@ -242,14 +249,15 @@ def parse_math(equation):
 
         symbols.append(ret)
         i += ret.offset
-        for flag in get_bit_flags(ret.type, ValueType):
+        for flag in get_bit_flags(ret.type, TokenType):
             flag_index[flag].append(ret)
 
     return symbols, flag_index
 
 
 symbols, flag_index = parse_math('1 - (-1)')
-print([s.type for s in symbols])
+combined = combine_symbols(symbols)
+ic(combined)
 # ic(flag_index[ValueType.SPACE])
 # for s1, s2 in zip(symbols, symbols[1:]):
 #     ic(s1, s2, are_symbols_adjacent(s1, s2))
