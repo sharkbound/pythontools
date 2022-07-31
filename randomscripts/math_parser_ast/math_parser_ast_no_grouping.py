@@ -40,7 +40,7 @@ EQUALITY_CHARS = set('=!<>')
 GROUPING_CHARS = set('()')
 NUMBER_LITERAL_CHARS = set('01234567890-')
 
-EQUALITY_OPERATORS = {'==', '!=', '<', '>', '<=', '>='}
+EQUALITY_OPERATORS = {'=', '!=', '<', '>', '<=', '>='}
 MATH_OPERATORS = {'*', '/', '-', '+', '^'}
 
 ALL_OPERATOR_CHARS = MATH_CHARS | EQUALITY_CHARS | GROUPING_CHARS
@@ -57,14 +57,6 @@ class ValueWithIndexShift(NamedTuple):
     end_index: int
     success: bool
     type: TokenType = TokenType.NOT_SET
-
-    @property
-    def islist(self):
-        return isinstance(self.value, list)
-
-    @property
-    def isstr(self):
-        return isinstance(self.value, str)
 
     @property
     def value_as_str(self):
@@ -229,8 +221,22 @@ def _combine_check_for_negatives(symbols: list[ValueWithIndexShift]):
     return symbols
 
 
-def combine_symbols(symbols: list[ValueWithIndexShift]):
-    _combine_check_for_negatives(symbols)
+def _combine_equality_operators(symbols: list[ValueWithIndexShift], flag_index: dict[TokenType, ValueWithIndexShift]):
+    out = symbols.copy()
+    i = 0
+    while i < len(out):
+        v = out[i]
+        if not v.type & TokenType.EQUALITY_OPERATOR:
+            pass
+        else:
+            pass
+        i += 1
+
+    return out
+
+
+def combine_symbols(symbols: list[ValueWithIndexShift], flag_index: dict[TokenType, ValueWithIndexShift]):
+    symbols = _combine_equality_operators(symbols, flag_index)
     return symbols
 
 
@@ -240,6 +246,7 @@ def parse_math(equation):
     equation = list(re.sub(r'\s+', ' ', equation))
     i = 0
     while i < len(equation):
+        # todo: fix iterating missing the last element
         char = equation[i]
 
         ret = handle_char(char, equation, i)
@@ -255,8 +262,8 @@ def parse_math(equation):
     return symbols, flag_index
 
 
-symbols, flag_index = parse_math('1 - (-1)')
-combined = combine_symbols(symbols)
+symbols, flag_index = parse_math('1 < 2 !=')
+combined = combine_symbols(symbols, flag_index)
 ic(combined)
 # ic(flag_index[ValueType.SPACE])
 # for s1, s2 in zip(symbols, symbols[1:]):
