@@ -51,6 +51,6 @@ def parse_math(equation):
     return symbols, flag_index
 
 
-symbols, flag_index = parse_math('<=>===!=')
+symbols, flag_index = parse_math('=!')
 for symbol in symbols:
     print(f'{symbol.value_as_str=!r:<10} | {symbol.type.name=:<20} | {symbol.operator_type.name=:<10}')
