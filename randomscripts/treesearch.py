@@ -9,7 +9,6 @@ class SearchResult:
     depth: int
     unmatched: str
     matched: str
-    node: 'Node' = field(repr=False)
     parent: Optional['Node'] = field(repr=False, default=None)
 
     @property
@@ -17,8 +16,15 @@ class SearchResult:
         return len(self.unmatched)
 
     @property
+    def is_full_match(self):
+        return not bool(self.unmatched)
+
+    @property
     def matched_length(self):
         return len(self.matched)
+
+
+_ids = iter(range(10000))
 
 
 @dataclass
@@ -26,13 +32,14 @@ class Node:
     children: list = field(default_factory=list)
     values: set = field(default_factory=set)
     depth: int = field(default=0)
+    _id: int = field(default_factory=lambda: next(_ids))
 
     def add_child(self):
         node = Node(depth=self.depth + 1)
         self.children.append(node)
         return node
 
-    def get_child_from_value(self, value, add_if_missing=True):
+    def get_child_from_value(self, value, add_if_missing=False):
         node = next(filter(lambda x: x.has_value(value), self.children), None)
         if add_if_missing and node is None:
             return self.add_child()
@@ -45,29 +52,27 @@ class Node:
     def has_value(self, value):
         return value in self.values
 
-    def _search(self, string: str, parent: 'Node' = None, matched: str = ''):
-        if not string:
-            return SearchResult(depth=self.depth, unmatched=string, node=self, parent=parent, matched=matched)
+    def _search(self, string: str, parent: 'Node' = None, matched: str = '') -> SearchResult:
+        if not string or not self.has_value(string[0]):
+            return SearchResult(depth=self.depth, unmatched=string, parent=parent, matched=matched)
 
-        if child_with_value := self.get_child_from_value(string[0], add_if_missing=False):
-            return child_with_value._search(string=string[1:], parent=self, matched=matched + string[0])
+        matched += string[0]
+        string = string[1:]
 
-        has_value_in_self = self.has_value(string[0])
-        if has_value_in_self and len(string) == 1:
-            return SearchResult(depth=self.depth, unmatched=string[1:], node=self, parent=parent, matched=matched + string[0])
+        if string and (child_with_value := self.get_child_from_value(string[0], add_if_missing=False)):
+            return child_with_value._search(string=string, parent=self, matched=matched)
 
-        elif has_value_in_self and len(string) > 1 and (child_with_value := self.get_child_from_value(string[1], add_if_missing=False)) is not None:
-            return child_with_value._search(string=string[1:], parent=self, matched=matched + string[0])
-
-        elif has_value_in_self and len(string) > 1:
-            return SearchResult(depth=self.depth, unmatched=string[1:], node=self, parent=parent, matched=matched + string[0])
-
-        return SearchResult(depth=self.depth, unmatched=string, node=self, parent=parent, matched=matched)
+        return SearchResult(depth=self.depth, unmatched=string, matched=matched)
 
     def search(self, string: str) -> SearchResult:
         return self._search(string, None, '')
 
-    def add_chain(self, values):
+    def add_from_iterables(self, iterables):
+        for iterable in iterables:
+            self.add_from_iterable(iterable)
+        return self
+
+    def add_from_iterable(self, values):
         """
         recursively adds values to subnodes until it adds them all
         """
@@ -75,15 +80,15 @@ class Node:
             return
 
         node = self
-        for value in values:
-            node.add_value(value)
-            # TODO: fix wierd overriding issue with this pair, this i suspect is the cause
-            #                    v
-            node = node.add_child()
+        for a, b in zip(values[:-1], values[1:]):
+            node.add_value(a)
+            node = node.get_child_from_value(b, add_if_missing=True)
+            node.add_value(b)
+        return self
 
     def pretty_print(self):
         if self.values:
-            print('  ' * self.depth, ', '.join(self.values), sep='')
+            print('-' * self.depth, f'ID({self._id}): ', ', '.join(self.values), sep='')
         for child in self.children:
             child.pretty_print()
 
@@ -97,16 +102,11 @@ class Node:
 
 
 if __name__ == '__main__':
-    nodes = Node()
-    # TODO: fix wierd overriding issue with this pair
-    #                    v
-    for oper in {'<=', '<<'}:  # {'=', '==', '!=', '>', '>=', '<', '<=', '->', '<-',}:
-        nodes.add_chain(oper)
-
-    # nodes.pretty_print()
-    # print('\n\n\n')
-    match = nodes.search('<=')
-    ic(
-        match,
-        match.node
-    )
+    nodes = Node().add_from_iterables(['1234', '124', '134'])
+    nodes.pretty_print()
+    ic(nodes.search('1'))
+    ic(nodes.search('12'))
+    ic(nodes.search('123'))
+    ic(nodes.search('1234'))
+    ic(nodes.search('12345'))
+    ic(nodes.search('1345'))
