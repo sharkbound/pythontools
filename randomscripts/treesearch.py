@@ -1,14 +1,17 @@
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import Optional, Sequence, Iterable, TypeVar, Generic
 
 from icecream import ic
 
+T = TypeVar('T')
+
 
 @dataclass(frozen=True)
-class SearchResult:
+class SearchResult(Generic[T]):
     depth: int
-    unmatched: str
-    matched: str
+    unmatched: Sequence[T]
+    matched: Sequence[T]
+    query: Sequence[T]
     parent: Optional['Node'] = field(repr=False, default=None)
 
     @property
@@ -28,9 +31,9 @@ _ids = iter(range(10000))
 
 
 @dataclass
-class Node:
-    children: list = field(default_factory=list)
-    values: set = field(default_factory=set)
+class Node(Generic[T]):
+    children: list['Node'] = field(default_factory=list)
+    values: set[T] = field(default_factory=set)
     depth: int = field(default=0)
     _id: int = field(default_factory=lambda: next(_ids))
 
@@ -39,40 +42,40 @@ class Node:
         self.children.append(node)
         return node
 
-    def get_child_from_value(self, value, add_if_missing=False):
+    def get_child_from_value(self, value: T, add_if_missing=False) -> 'Node':
         node = next(filter(lambda x: x.has_value(value), self.children), None)
         if add_if_missing and node is None:
             return self.add_child()
         return node
 
-    def add_value(self, value):
+    def add_value(self, value: T):
         self.values.add(value)
         return self
 
-    def has_value(self, value):
+    def has_value(self, value: T):
         return value in self.values
 
-    def _search(self, string: str, parent: 'Node' = None, matched: str = '') -> SearchResult:
+    def _search(self, string: Sequence[T], parent: 'Node' = None, matched: Sequence = '', query: Sequence = None) -> SearchResult:
         if not string or not self.has_value(string[0]):
-            return SearchResult(depth=self.depth, unmatched=string, parent=parent, matched=matched)
+            return SearchResult(depth=self.depth, unmatched=string, parent=parent, matched=matched, query=query)
 
         matched += string[0]
         string = string[1:]
 
         if string and (child_with_value := self.get_child_from_value(string[0], add_if_missing=False)):
-            return child_with_value._search(string=string, parent=self, matched=matched)
+            return child_with_value._search(string=string, parent=self, matched=matched, query=query)
 
-        return SearchResult(depth=self.depth, unmatched=string, matched=matched)
+        return SearchResult(depth=self.depth, unmatched=string, matched=matched, query=query)
 
-    def search(self, string: str) -> SearchResult:
-        return self._search(string, None, '')
+    def search(self, query: Sequence[T]) -> SearchResult:
+        return self._search(string=query, parent=None, matched='', query=query)
 
-    def add_from_iterables(self, iterables):
+    def add_from_iterables(self, iterables: Iterable[Sequence[T]]):
         for iterable in iterables:
             self.add_from_iterable(iterable)
         return self
 
-    def add_from_iterable(self, values):
+    def add_from_iterable(self, values: Sequence[T]):
         """
         recursively adds values to subnodes until it adds them all
         """
@@ -109,4 +112,3 @@ if __name__ == '__main__':
     ic(nodes.search('123'))
     ic(nodes.search('1234'))
     ic(nodes.search('12345'))
-    ic(nodes.search('1345'))
