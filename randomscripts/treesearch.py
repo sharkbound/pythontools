@@ -1,16 +1,18 @@
-from dataclasses import dataclass, field
-from typing import Optional, Iterable, TypeVar, Callable, Protocol, Hashable, Sequence
+from dataclasses import dataclass, field, replace
+from typing import Optional, Iterable, TypeVar, Callable, Protocol, Hashable, Sequence, Any
 
 from icecream import ic
 
 TupleOfHashables = tuple[Hashable, ...]
+ListOfHashables = list[Hashable, ...]
 
 
 @dataclass(frozen=True)
 class SearchResult:
-    unmatched: TupleOfHashables
     matched: TupleOfHashables
+    unmatched: TupleOfHashables
     query: TupleOfHashables
+    all_matches: ListOfHashables = field(repr=False)
 
     @property
     def unmatched_length(self):
@@ -58,24 +60,30 @@ class Node:
 
     def _search(
             self,
-            string: TupleOfHashables,
+            remaining: TupleOfHashables,
             matched: TupleOfHashables,
+            all_matches: ListOfHashables,
             query: TupleOfHashables = None
     ) -> SearchResult:
-        if not string or not self.has_value(string[0]):
-            return SearchResult(unmatched=string, matched=matched, query=query)
+        if not remaining:
+            all_matches.append(result := SearchResult(unmatched=remaining, matched=matched, query=query, all_matches=[]))
+            return result
 
-        matched = matched + (string[0],)
-        string = string[1:]
+        if not self.has_value(remaining[0]):
+            return SearchResult(unmatched=remaining, matched=matched, query=query, all_matches=all_matches)
 
-        if string and (child_with_value := self.get_child_from_value(string[0], add_if_missing=False)):
-            return child_with_value._search(string=string, matched=matched, query=query)
+        matched = matched + (remaining[0],)
+        remaining = remaining[1:]
+        all_matches.append(SearchResult(unmatched=remaining, matched=matched, query=query, all_matches=[]))
 
-        return SearchResult(unmatched=string, matched=matched, query=query)
+        if remaining and (child_with_value := self.get_child_from_value(remaining[0], add_if_missing=False)):
+            return child_with_value._search(remaining=remaining, matched=matched, query=query, all_matches=all_matches)
+
+        return SearchResult(unmatched=remaining, matched=matched, query=query, all_matches=all_matches)
 
     def search(self, query: Iterable[Hashable]) -> SearchResult:
         query = tuple(query)
-        return self._search(string=query, matched=(), query=query)
+        return self._search(remaining=query, matched=(), query=query, all_matches=[])
 
     def add_from_iterables(self, iterables: Iterable[Sequence[TupleOfHashables]]):
         for iterable in iterables:
@@ -115,7 +123,57 @@ class Node:
         return bool(self.values)
 
 
+def format_search_results(result: SearchResult, formatter: Callable[[tuple[Hashable]], Any]) -> SearchResult:
+    return SearchResult(
+        unmatched=formatter(result.unmatched),
+        matched=formatter(result.matched),
+        query=formatter(result.query),
+        all_matches=[format_search_results(x, formatter) for x in result.all_matches]
+    )
+
+
+# noinspection PyTypeChecker
+def format_search_results_all(results: Iterable[SearchResult], formatter: Callable[[tuple[Hashable]], Any]) -> SearchResult:
+    return [format_search_results(result, formatter) for result in results]
+
+
+def search_filter_true(query: Iterable[Hashable], filter: Callable[[SearchResult], bool], nodes: Node) -> list[SearchResult]:
+    result = nodes.search(query)
+    return [r for r in result.all_matches if filter(r)]
+
+
+def search_filter_true_first(query: Iterable[Hashable], predicate: Callable[[SearchResult], bool], nodes: Node) -> Optional[SearchResult]:
+    return next(filter(predicate, nodes.search(query).all_matches), None)
+
+
+def search_filter_true_last(query: Iterable[Hashable], predicate: Callable[[SearchResult], bool], nodes: Node) -> Optional[SearchResult]:
+    result = nodes.search(query)
+    value = None
+    for match in result.all_matches:
+        if predicate(match):
+            value = match
+    return value
+
+
+def search_filter_false(query: Iterable[Hashable], filter: Callable[[SearchResult], bool], nodes: Node) -> list[SearchResult]:
+    return [r for r in nodes.search(query).all_matches if not filter(r)]
+
+
+def search_filter_false_first(query: Iterable[Hashable], predicate: Callable[[SearchResult], bool], nodes: Node) -> Optional[SearchResult]:
+    result = nodes.search(query)
+    return next(filter(lambda x: not predicate(x), result.all_matches), None)
+
+
+def search_filter_false_last(query: Iterable[Hashable], predicate: Callable[[SearchResult], bool], nodes: Node) -> Optional[SearchResult]:
+    result = nodes.search(query)
+    value = None
+    for match in result.all_matches:
+        if not predicate(match):
+            value = match
+    return value
+
+
 if __name__ == '__main__':
-    nodes = Node().add_from_iterables(set('*/-+^') | {'=', '==', '!=', '<', '>', '<=', '>='} | {'*', '/', '-', '+', '^'})
+    nodes = Node().add_from_iterables({'12545'} | set('*/-+^') | {'=', '==', '!=', '<', '>', '<=', '>='} | {'*', '/', '-', '+', '^'})
     nodes.pretty_print()
-    ic(nodes.search(['-', '+']))
+    ic(format_search_results_all(search_filter_false('12545', lambda x: x.matched[-1] == '5', nodes), ''.join))
