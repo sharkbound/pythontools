@@ -1,18 +1,16 @@
 from dataclasses import dataclass, field
-from typing import Optional, Sequence, Iterable, TypeVar, Generic
+from typing import Optional, Iterable, TypeVar, Callable, Protocol, Hashable, Sequence
 
 from icecream import ic
 
-T = TypeVar('T')
+TupleOfHashables = tuple[Hashable, ...]
 
 
 @dataclass(frozen=True)
-class SearchResult(Generic[T]):
-    depth: int
-    unmatched: Sequence[T]
-    matched: Sequence[T]
-    query: Sequence[T]
-    parent: Optional['Node'] = field(repr=False, default=None)
+class SearchResult:
+    unmatched: TupleOfHashables
+    matched: TupleOfHashables
+    query: TupleOfHashables
 
     @property
     def unmatched_length(self):
@@ -31,9 +29,9 @@ _ids = iter(range(10000))
 
 
 @dataclass
-class Node(Generic[T]):
+class Node:
     children: list['Node'] = field(default_factory=list)
-    values: set[T] = field(default_factory=set)
+    values: set[Hashable] = field(default_factory=set)
     depth: int = field(default=0)
     _id: int = field(default_factory=lambda: next(_ids))
 
@@ -42,43 +40,49 @@ class Node(Generic[T]):
         self.children.append(node)
         return node
 
-    def get_child_from_value(self, value: T, add_if_missing=False) -> Optional['Node']:
+    def get_child_from_value(self, value: Hashable, add_if_missing=False) -> Optional['Node']:
         node = next(filter(lambda x: x.has_value(value), self.children), None)
         if add_if_missing and node is None:
             return self.add_child()
         return node
 
-    def add_value(self, value: T):
+    def add_value(self, value: Hashable):
         self.values.add(value)
         return self
 
-    def has_value(self, value: T):
+    def has_value(self, value: Hashable):
         return value in self.values
 
-    def has_child_with_value(self, value: T):
+    def has_child_with_value(self, value: Hashable):
         return self.children and any(child.has_value(value) for child in self.children)
 
-    def _search(self, string: Sequence[T], parent: 'Node' = None, matched: Sequence = '', query: Sequence = None) -> SearchResult:
+    def _search(
+            self,
+            string: TupleOfHashables,
+            matched: TupleOfHashables,
+            query: TupleOfHashables = None
+    ) -> SearchResult:
         if not string or not self.has_value(string[0]):
-            return SearchResult(depth=self.depth, unmatched=string, parent=parent, matched=matched, query=query)
+            return SearchResult(unmatched=string, matched=matched, query=query)
 
-        matched += string[0]
+        matched = matched + (string[0],)
         string = string[1:]
 
         if string and (child_with_value := self.get_child_from_value(string[0], add_if_missing=False)):
-            return child_with_value._search(string=string, parent=self, matched=matched, query=query)
+            return child_with_value._search(string=string, matched=matched, query=query)
 
-        return SearchResult(depth=self.depth, unmatched=string, matched=matched, query=query)
+        return SearchResult(unmatched=string, matched=matched, query=query)
 
-    def search(self, query: Sequence[T]) -> SearchResult:
-        return self._search(string=query, parent=None, matched='', query=query)
+    def search(self, query: Iterable[Hashable]) -> SearchResult:
+        query = tuple(query)
+        return self._search(string=query, matched=(), query=query)
 
-    def add_from_iterables(self, iterables: Iterable[Sequence[T]]):
+    def add_from_iterables(self, iterables: Iterable[Sequence[TupleOfHashables]]):
         for iterable in iterables:
             self.add_from_iterable(iterable)
         return self
 
-    def add_from_iterable(self, values: Sequence[T]):
+    def add_from_iterable(self, values: Sequence[Hashable]):
         """
         recursively adds values to subnodes until it adds them all
         """
@@ -114,4 +118,4 @@ class Node(Generic[T]):
 if __name__ == '__main__':
     nodes = Node().add_from_iterables(set('*/-+^') | {'=', '==', '!=', '<', '>', '<=', '>='} | {'*', '/', '-', '+', '^'})
     nodes.pretty_print()
-    ic(nodes.search('*='))
+    ic(nodes.search(['-', '+']))
