@@ -42,7 +42,7 @@ class Node(Generic[T]):
         self.children.append(node)
         return node
 
-    def get_child_from_value(self, value: T, add_if_missing=False) -> 'Node':
+    def get_child_from_value(self, value: T, add_if_missing=False) -> Optional['Node']:
         node = next(filter(lambda x: x.has_value(value), self.children), None)
         if add_if_missing and node is None:
             return self.add_child()
@@ -54,6 +54,9 @@ class Node(Generic[T]):
 
     def has_value(self, value: T):
         return value in self.values
+
+    def has_child_with_value(self, value: T):
+        return self.children and any(child.has_value(value) for child in self.children)
 
     def _search(self, string: Sequence[T], parent: 'Node' = None, matched: Sequence = '', query: Sequence = None) -> SearchResult:
         if not string or not self.has_value(string[0]):
@@ -80,7 +83,11 @@ class Node(Generic[T]):
         recursively adds values to subnodes until it adds them all
         """
         if not values:
-            return
+            return self
+
+        if len(values) == 1:
+            self.add_value(values[0])
+            return self
 
         node = self
         for a, b in zip(values[:-1], values[1:]):
@@ -105,10 +112,6 @@ class Node(Generic[T]):
 
 
 if __name__ == '__main__':
-    nodes = Node().add_from_iterables(['1234', '124', '134'])
+    nodes = Node().add_from_iterables(set('*/-+^') | {'=', '==', '!=', '<', '>', '<=', '>='} | {'*', '/', '-', '+', '^'})
     nodes.pretty_print()
-    ic(nodes.search('1'))
-    ic(nodes.search('12'))
-    ic(nodes.search('123'))
-    ic(nodes.search('1234'))
-    ic(nodes.search('12345'))
+    ic(nodes.search('*='))
