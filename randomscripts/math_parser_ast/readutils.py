@@ -69,9 +69,9 @@ def read_int(data, index):
 
 def read_operator(data, index):
     best_match = treesearch.search_filter_true_last(
-        peek_ahead(data, index, predicates.pred_is_operator_char).value,
-        (lambda x: ''.join(x.matched) in constants.ALL_OPERATORS),
-        constants.OPERATOR_TREE
+        query=peek_ahead(data, index, predicates.pred_is_operator_char).value,
+        predicate=(lambda x: ''.join(x.matched) in constants.ALL_OPERATORS),
+        nodes=constants.OPERATOR_TREE
     )
 
     if best_match is None:
