@@ -1,6 +1,9 @@
-from dataclasses import replace
+import treesearch
+import constants
+import datatypes
+import predicates
 
-from datatypes import PeekProgress, ValueWithIndexShift
+from dataclasses import replace
 from constants import NUMBER_LITERAL_CHARS, RE_INT, ALL_VARIABLE_CHARS
 from enums import TokenType
 
@@ -11,7 +14,7 @@ def peek_ahead(data, index, predicate, limit=None):
     while (
             (limit is None or limit > 0)
             and index < len(data)
-            and predicate(PeekProgress(
+            and predicate(datatypes.PeekProgress(
         value=data[index],
         prev_chars=prev_chars,
         prev_str=''.join(prev_chars),
@@ -23,7 +26,7 @@ def peek_ahead(data, index, predicate, limit=None):
         if limit is not None:
             limit -= 1
 
-    return ValueWithIndexShift(
+    return datatypes.ValueWithIndexShift(
         value=tuple(prev_chars),
         start_index=original_index,
         end_index=index,
@@ -35,7 +38,7 @@ def read_and_assign_type_if_success(data, i, predicate, type_if_success, limit=N
     value = peek_ahead(data, i, predicate, limit=limit)
     if value.success:
         return value.assign_type(type_if_success)
-    return ValueWithIndexShift.invalid()
+    return datatypes.VALUE_WITH_INDEX_SHIFT_INVALID
 
 
 def read_variable(data, index):
@@ -46,7 +49,7 @@ def read_literal(data, index):
     if data[index].isspace():
         return read_and_assign_type_if_success(data, index, lambda x: x.value.isspace(), TokenType.SPACE)
 
-    def _read(x: PeekProgress):
+    def _read(x: datatypes.PeekProgress):
         if x.value not in NUMBER_LITERAL_CHARS:
             return False
         if x.value.isnumeric():
@@ -57,8 +60,25 @@ def read_literal(data, index):
     if value.success and RE_INT.match(value.value_as_str):
         return value
 
-    return ValueWithIndexShift.invalid()
+    return datatypes.VALUE_WITH_INDEX_SHIFT_INVALID
 
 
 def read_int(data, index):
     return read_and_assign_type_if_success(data, index, lambda x: x.value.isnumeric(), TokenType.INT_LITERAL)
+
+
+def read_operator(data, index):
+    best_match = treesearch.search_filter_true_last(
+        peek_ahead(data, index, predicates.pred_is_operator_char).value,
+        (lambda x: ''.join(x.matched) in constants.ALL_OPERATORS),
+        constants.OPERATOR_TREE
+    )
+
+    if best_match is None:
+        return datatypes.VALUE_WITH_INDEX_SHIFT_INVALID
+
+    return datatypes.ValueWithIndexShift(
+        value=best_match.matched,
+        start_index=index, end_index=index + best_match.matched_length,
+        success=True
+    )

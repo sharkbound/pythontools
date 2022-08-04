@@ -28,14 +28,6 @@ class ValueWithIndexShift:
     def offset(self):
         return self.end_index - self.start_index
 
-    @classmethod
-    def not_set(cls):
-        return cls(value=(), start_index=-1, end_index=-1, success=False, type=enums.TokenType.NOT_SET)
-
-    @classmethod
-    def invalid(cls):
-        return cls(value=(), start_index=-1, end_index=-1, success=False, type=enums.TokenType.INVALID)
-
     @property
     def is_known_type(self):
         return self.type not in (enums.TokenType.NOT_SET, enums.TokenType.INVALID)
@@ -45,3 +37,7 @@ class ValueWithIndexShift:
 
     def assign_operator_type(self, operator_type: enums.OperatorType):
         return replace(self, operator_type=operator_type)
+
+
+VALUE_WITH_INDEX_SHIFT_INVALID = ValueWithIndexShift(value=(), start_index=-1, end_index=-1, success=False, type=enums.TokenType.INVALID)
+VALUE_WITH_INDEX_SHIFT_NOT_SET = ValueWithIndexShift(value=(), start_index=-1, end_index=-1, success=False, type=enums.TokenType.NOT_SET)

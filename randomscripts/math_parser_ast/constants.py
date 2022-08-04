@@ -1,6 +1,7 @@
 import re
 import enums
-from string import ascii_letters
+import treesearch
+import string
 
 MATH_CHARS = set('*/-+^')
 EQUALITY_CHARS = set('=!<>')
@@ -11,11 +12,14 @@ EQUALITY_OPERATORS = {'=', '==', '!=', '<', '>', '<=', '>='}
 MATH_OPERATORS = {'*', '/', '-', '+', '^'}
 
 ALL_OPERATOR_CHARS = MATH_CHARS | EQUALITY_CHARS | GROUPING_CHARS
-ALL_VARIABLE_CHARS = set(ascii_letters) | {'_'}
+ALL_VARIABLE_CHARS = set(string.ascii_letters) | {'_'}
 
 ALL_OPERATORS = MATH_OPERATORS | EQUALITY_OPERATORS | GROUPING_CHARS
 
 RE_INT = re.compile(r'^([-]?)(\d+)$')
+
+OPERATOR_TREE = treesearch.Node()
+OPERATOR_TREE.add_from_iterables(ALL_OPERATORS)
 
 str_to_operator_type = {
     # equality
