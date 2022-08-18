@@ -40,7 +40,7 @@ class FileSelector:
     NOT_SET = object()
 
     def __init__(self, selection_validator: Callable[[Path], bool] = lambda _: True, initial_path: Path = None):
-        self.selection_validator = selection_validator # todo: add support for returning an string, then printing it as a error
+        self.selection_validator = selection_validator  # todo: add support for returning an string, then printing it as a error
         self.key_bindings = ptt.key_binding.KeyBindings()
         self.key_bindings.add(Keys.Any, eager=True)(self.on_key_press)
         self.key_bindings.add(Keys.ControlC, eager=True)(lambda _: self._exit_app())

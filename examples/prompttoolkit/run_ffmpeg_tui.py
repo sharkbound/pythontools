@@ -11,12 +11,24 @@ from file_selector_ui import FileSelector
 ROOT_DIR = Path(sys.argv[1] if len(sys.argv) > 1 else '.')
 
 
+def is_valid_output_filename(filename):
+    return all(c for c in filename if c.strip() and c.isascii())
+
+
 def is_float(value):
     try:
         float(value)
         return True
     except ValueError:
         return 'input must be a valid float (ex: 2.0, 2.5, 3)'
+
+
+def is_int(value):
+    try:
+        float(value)
+        return True
+    except ValueError:
+        return 'input must be a valid int (ex: 2, 3, 10)'
 
 
 class FFMPEGMode:
@@ -48,7 +60,7 @@ def handle_mode_increase_volume():
 
     path = launch_file_selector(initial_path=ROOT_DIR, selection_validator=lambda p: p.suffix.lower() in VALID_EXTENSIONS)
     volume = questionary.text('Enter amount to boost volume by: ', validate=is_float).ask()
-    outfile = CWD / (questionary.text('Enter output file name: ', validate=lambda x: x.isalnum()).ask() + path.suffix)
+    outfile = CWD / (questionary.text('Enter output file name: ', validate=is_valid_output_filename).ask() + path.suffix)
     args = ['ffmpeg', '-i', f'"{path}"', '-filter:a', f'"volume={volume}" "{outfile}"']
 
     execute_console_command_and_check_output(args, outfile)
@@ -58,7 +70,7 @@ def handle_mode_extract_audio():
     VALID_EXTENSIONS = ['.mp4']
 
     path = launch_file_selector(initial_path=ROOT_DIR, selection_validator=lambda p: p.suffix.lower() in VALID_EXTENSIONS)
-    outfile = CWD / (questionary.text('Enter output file name: ', validate=lambda x: x.isalnum()).ask() + '.mp3')
+    outfile = CWD / (questionary.text('Enter output file name: ', validate=is_valid_output_filename).ask() + '.mp3')
     args = ['ffmpeg', f'-i "{path}"', '-q:a 0', '-map a', f'"{outfile}"']
 
     execute_console_command_and_check_output(args, outfile)
@@ -67,13 +79,36 @@ def handle_mode_extract_audio():
 mode = questionary.select('select an FFMPEG operation:', FFMPEGMode.ALL, use_shortcuts=True).ask()
 
 
+def ask_hour_minute_second(mode):
+    def _is_int_or_empty(value):
+        if value:
+            return is_int(value)
+        return True
+
+    if mode == 'start':
+        ask = lambda type: questionary.text(f'enter the {type.upper()} as an two digit number (default 0): ', validate=_is_int_or_empty).ask().zfill(
+            2)
+        return {'hour': ask('hour'), 'minute': ask('minute'), 'second': ask('second')}
+    elif mode == 'duration':
+        ask = lambda type: questionary.text(f'enter duration of {type.upper()}s to include in the audio slice (default 0): ',
+                                            validate=_is_int_or_empty).ask().zfill(2)
+        return {'hour': ask('hour'), 'minute': ask('minute'), 'second': ask('second')}
+
+
 def handle_mode_slice_audio():
     VALID_EXTENSIONS = ['.mp3']
-    # todo: make this use -ss -t for ffmpeg arguments
     path = launch_file_selector(initial_path=ROOT_DIR, selection_validator=lambda p: p.suffix.lower() in VALID_EXTENSIONS)
-    outfile = CWD / (questionary.text('Enter output file name: ', validate=lambda x: x.isalnum()).ask() + '.mp3')
-    args = ['ffmpeg', f'-i "{path}"', '-q:a 0', '-map a', f'"{outfile}"']
+    hms_start = ask_hour_minute_second('start')
+    hms_duration = ask_hour_minute_second('duration')
+    outfile = CWD / (questionary.text('Enter output file name: ', validate=is_valid_output_filename).ask() + '.mp3')
 
+    args = [
+        'ffmpeg',
+        f'-i "{path}"',
+        '-ss', ':'.join((hms_start['hour'], hms_start['minute'], hms_start['second'])),
+        '-t', ':'.join((hms_duration['hour'], hms_duration['minute'], hms_duration['second'])),
+        f'"{outfile}"'
+    ]
     execute_console_command_and_check_output(args, outfile)
 
 
