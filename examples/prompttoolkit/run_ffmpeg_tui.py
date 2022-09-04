@@ -67,7 +67,7 @@ def handle_mode_increase_volume():
 
 
 def handle_mode_extract_audio():
-    VALID_EXTENSIONS = ['.mp4']
+    VALID_EXTENSIONS = ['.mp4', '.mkv']
 
     path = launch_file_selector(initial_path=ROOT_DIR, selection_validator=lambda p: p.suffix.lower() in VALID_EXTENSIONS)
     outfile = CWD / (questionary.text('Enter output file name: ', validate=is_valid_output_filename).ask() + '.mp3')
