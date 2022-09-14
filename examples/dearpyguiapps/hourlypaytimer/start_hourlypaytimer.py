@@ -1,7 +1,9 @@
 import collections
+from datetime import datetime
 from time import time
 
 import dearpygui.dearpygui as dpg
+import pyperclip
 
 from config import Config
 
@@ -36,29 +38,13 @@ def setup_gui():
             dpg.add_theme_style(dpg.mvStyleVar_FramePadding, 10, 10)
 
     with dpg.font_registry():
-        dpg.add_font('C:/Windows/Fonts/impact.ttf', size=50, tag='big_impact')
+        dpg.add_font('C:/Windows/Fonts/impact.ttf', size=100, tag='big_impact')
         dpg.add_font('C:/Windows/Fonts/impact.ttf', size=25, tag='lesser_impact')
 
     with dpg.window(tag='main'):
         add_timer_control_elements()
         add_elapsed_time_elements()
-        add_pause_control_elements()
         add_hourly_pay_elements()
-
-
-def add_hourly_pay_elements():
-    dpg.add_input_float(label='Pay-Per-Hour', tag='pay_per_hour', default_value=25)
-    with dpg.group(horizontal=True):
-        dpg.add_text('Current Pay:')
-        dpg.bind_item_font(dpg.last_item(), 'lesser_impact')
-        dpg.add_text('$0', tag='current_pay')
-        dpg.bind_item_font(dpg.last_item(), 'big_impact')
-
-        import pyperclip
-        dpg.add_button(
-            label='Copy Pay',
-            callback=lambda _, __, ___: pyperclip.copy(str(round(calculate_pay(), 2)))
-        )
 
 
 def add_timer_control_elements():
@@ -67,22 +53,65 @@ def add_timer_control_elements():
         dpg.bind_item_theme(dpg.last_item(), '__round')
         dpg.add_button(label='End Time', callback=end_time_clicked)
         dpg.bind_item_theme(dpg.last_item(), '__round')
-        dpg.add_button(label='Reset', callback=reset_start_end_clicked)
-        dpg.bind_item_theme(dpg.last_item(), '__round')
-
-
-def add_pause_control_elements():
-    with dpg.group(horizontal=True):
         dpg.add_button(label='Start Pause', callback=start_paused_clicked)
         dpg.bind_item_theme(dpg.last_item(), '__round')
         dpg.add_button(label='End Pause', callback=end_paused_clicked)
         dpg.bind_item_theme(dpg.last_item(), '__round')
 
+    with dpg.group(horizontal=True):
+        dpg.add_button(label='Reset', callback=reset_start_end_clicked)
+        dpg.bind_item_theme(dpg.last_item(), '__round')
+        dpg.add_button(label='Clear End', callback=clear_end_clicked)
+        dpg.bind_item_theme(dpg.last_item(), '__round')
+        dpg.add_button(label='Clear Pauses', callback=clear_pauses_clicked)
+        dpg.bind_item_theme(dpg.last_item(), '__round')
+
+
+def clear_end_clicked(sender, _, data):
+    cfg['end'] = 0
+    cfg.save()
+
+
+def clear_pauses_clicked(sender, _, data):
+    cfg['pauses'] = []
+    cfg['start_pause'] = 0
+    cfg['end_pause'] = 0
+    cfg.save()
+
+
+def copy_epoch_time_stamp_in_human_readable_format_clicked(sender, _, data):
+    if data == 'start' and cfg.start != 0:
+        pyperclip.copy(format_epoch_time(cfg.start))
+    elif data == 'end' and cfg.end != 0:
+        pyperclip.copy(format_epoch_time(cfg.end))
+
+
+def add_hourly_pay_elements():
+    dpg.add_input_float(label='Pay-Per-Hour', tag='pay_per_hour', default_value=25)
+
+    with dpg.group(horizontal=True):
+        dpg.add_button(label='Copy Pay', callback=lambda _, __, ___: pyperclip.copy(str(round(calculate_pay(), 2))))
+        dpg.bind_item_theme(dpg.last_item(), '__round')
+
+        dpg.add_button(label='Copy Start UTC Time', user_data='start', callback=copy_epoch_time_stamp_in_human_readable_format_clicked)
+        dpg.bind_item_theme(dpg.last_item(), '__round')
+
+        dpg.add_button(label='Copy End UTC Time', user_data='end', callback=copy_epoch_time_stamp_in_human_readable_format_clicked)
+        dpg.bind_item_theme(dpg.last_item(), '__round')
+
+    with dpg.group(horizontal=True):
+        dpg.add_spacer(width=100)
+        dpg.add_text('$0', tag='current_pay')
+        dpg.bind_item_font(dpg.last_item(), 'big_impact')
+
+
+def format_epoch_time(epoch_timestamp):
+    return datetime.utcfromtimestamp(epoch_timestamp).strftime('%I:%M %p UTC')
+
 
 def add_elapsed_time_elements():
     with dpg.group(horizontal=True):
-        dpg.add_text('ELAPSED TIME:')
-        dpg.bind_item_font(dpg.last_item(), 'lesser_impact')
+        dpg.add_spacer(width=70)
         dpg.add_text('00:00:00', tag='elapsed_time_label')
         dpg.bind_item_font(dpg.last_item(), 'big_impact')
 
@@ -109,10 +138,11 @@ def ensure_start_and_end(start, end=None):
     """
     replace None or 0 with the current epoch time
     """
+    NOW = time()
     if end is None or end == 0:
-        end = time()
+        end = NOW
     if start is None or start == 0:
-        start = time()
+        start = NOW
     return start, end
 
 
@@ -148,8 +178,6 @@ def reset_start_end_clicked():
     cfg['end_pause'] = 0
     cfg['pauses'] = []
     cfg.save()
-    dpg.set_value('elapsed_time_label', '00:00:00')
-    dpg.set_value('current_pay', '$0')
 
 
 def start_time_clicked(sender, _, data):
