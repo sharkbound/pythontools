@@ -54,6 +54,12 @@ def add_hourly_pay_elements():
         dpg.add_text('$0', tag='current_pay')
         dpg.bind_item_font(dpg.last_item(), 'big_impact')
 
+        import pyperclip
+        dpg.add_button(
+            label='Copy Pay',
+            callback=lambda _, __, ___: pyperclip.copy(str(round(calculate_pay(), 2)))
+        )
+
 
 def add_timer_control_elements():
     with dpg.group(horizontal=True):
@@ -94,12 +100,17 @@ def update_pay():
     if not cfg.start:
         return 0
 
-    start = cfg.start
+    due_pay = calculate_pay()
+    dpg.set_value('current_pay', f'${round(due_pay, 2)}')
+
+
+def calculate_pay():
+    start = cfg.start or time()
     end = cfg.end or time()
     formatted_diff = format_seconds(abs(start - (end or time())))
     pay_per_hour = dpg.get_value('pay_per_hour')
     due_pay = (((formatted_diff.hours * 3600) + (formatted_diff.minutes * 60) + formatted_diff.seconds) / 3600) * pay_per_hour
-    dpg.set_value('current_pay', f'${round(due_pay, 2):0<.3}')
+    return due_pay
 
 
 def reset_start_end_clicked():
