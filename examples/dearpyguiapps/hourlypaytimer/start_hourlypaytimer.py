@@ -5,8 +5,8 @@ import dearpygui.dearpygui as dpg
 
 from config import Config
 
-WIDTH = 350
-HEIGHT = 300
+WIDTH = 550
+HEIGHT = 400
 
 FormattedSeconds = collections.namedtuple('FormattedSeconds', 'total_seconds hours minutes seconds')
 
@@ -43,6 +43,16 @@ def setup_gui():
         add_timer_control_elements()
         add_elapsed_time_elements()
         add_pause_control_elements()
+        add_hourly_pay_elements()
+
+
+def add_hourly_pay_elements():
+    dpg.add_input_float(label='Pay-Per-Hour', tag='pay_per_hour', default_value=25)
+    with dpg.group(horizontal=True):
+        dpg.add_text('Current Pay:')
+        dpg.bind_item_font(dpg.last_item(), 'lesser_impact')
+        dpg.add_text('$0', tag='current_pay')
+        dpg.bind_item_font(dpg.last_item(), 'big_impact')
 
 
 def add_timer_control_elements():
@@ -50,6 +60,8 @@ def add_timer_control_elements():
         dpg.add_button(label='Start Time', callback=start_time_clicked)
         dpg.bind_item_theme(dpg.last_item(), '__round')
         dpg.add_button(label='End Time', callback=end_time_clicked)
+        dpg.bind_item_theme(dpg.last_item(), '__round')
+        dpg.add_button(label='Reset Start and End', callback=reset_start_end_clicked)
         dpg.bind_item_theme(dpg.last_item(), '__round')
 
 
@@ -69,22 +81,42 @@ def add_elapsed_time_elements():
         dpg.bind_item_font(dpg.last_item(), 'big_impact')
 
 
-def update_elapsed_time_labels():
+def update_labels():
     if not cfg.start:
         return
 
     formatted_diff = format_seconds(abs(cfg.start - (cfg.end or time())))
-    print(f'{formatted_diff.hours:0>2}:{formatted_diff.minutes:0>2}:{formatted_diff.seconds:0>2}')
-    dpg.set_item_label('_elapsed_time_label', f'{formatted_diff.hours:0>2}:{formatted_diff.minutes:0>2}:{formatted_diff.seconds:0>2}')
+    dpg.set_value('_elapsed_time_label', f'{formatted_diff.hours:0>2}:{formatted_diff.minutes:0>2}:{formatted_diff.seconds:0>2}')
+    update_pay()
+
+
+def update_pay():
+    if not cfg.start:
+        return 0
+
+    start = cfg.start
+    end = cfg.end or time()
+    formatted_diff = format_seconds(abs(start - (end or time())))
+    pay_per_hour = dpg.get_value('pay_per_hour')
+    due_pay = (((formatted_diff.hours * 3600) + (formatted_diff.minutes * 60) + formatted_diff.seconds) / 3600) * pay_per_hour
+    dpg.set_value('current_pay', f'${round(due_pay, 2):0<.3}')
+
+
+def reset_start_end_clicked():
+    cfg['start'] = 0
+    cfg['end'] = 0
+    dpg.set_value('_elapsed_time_label', '00:00:00')
+    dpg.set_value('current_pay', '$0')
 
 
 def start_time_clicked(sender, _, data):
-    print('yes')
-    cfg.start = int(time())
+    cfg['start'] = int(time())
+    cfg.save()
 
 
 def end_time_clicked(sender, _, data):
-    cfg.end = int(time())
+    cfg['end'] = int(time())
+    cfg.save()
 
 
 def start_paused_clicked(sender, _, data):
@@ -106,7 +138,7 @@ def run():
     dpg.show_viewport()
 
     while dpg.is_dearpygui_running():
-        update_elapsed_time_labels()
+        update_labels()
         dpg.render_dearpygui_frame()
 
     dpg.destroy_context()
