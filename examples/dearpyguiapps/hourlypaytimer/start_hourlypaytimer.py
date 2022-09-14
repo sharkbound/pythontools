@@ -26,14 +26,14 @@ def format_seconds(seconds):
     )
 
 
-cfg = Config('records.json', start=0, end=0, paused=False, pauses=[], previous=[])
+cfg = Config('records.json', start=0, end=0, start_pause=0, end_pause=0, paused=False, pauses=[])
 
 
 def setup_gui():
     with dpg.theme(tag='__round'):
         with dpg.theme_component(dpg.mvButton):
             dpg.add_theme_style(dpg.mvStyleVar_FrameRounding, 10)
-            dpg.add_theme_style(dpg.mvStyleVar_FramePadding, 30, 30)
+            dpg.add_theme_style(dpg.mvStyleVar_FramePadding, 10, 10)
 
     with dpg.font_registry():
         dpg.add_font('C:/Windows/Fonts/impact.ttf', size=50, tag='big_impact')
@@ -67,7 +67,7 @@ def add_timer_control_elements():
         dpg.bind_item_theme(dpg.last_item(), '__round')
         dpg.add_button(label='End Time', callback=end_time_clicked)
         dpg.bind_item_theme(dpg.last_item(), '__round')
-        dpg.add_button(label='Reset Start and End', callback=reset_start_end_clicked)
+        dpg.add_button(label='Reset', callback=reset_start_end_clicked)
         dpg.bind_item_theme(dpg.last_item(), '__round')
 
 
@@ -83,7 +83,7 @@ def add_elapsed_time_elements():
     with dpg.group(horizontal=True):
         dpg.add_text('ELAPSED TIME:')
         dpg.bind_item_font(dpg.last_item(), 'lesser_impact')
-        dpg.add_text('00:00:00', tag='_elapsed_time_label')
+        dpg.add_text('00:00:00', tag='elapsed_time_label')
         dpg.bind_item_font(dpg.last_item(), 'big_impact')
 
 
@@ -92,8 +92,9 @@ def update_labels():
         return
 
     formatted_diff = format_seconds(abs(cfg.start - (cfg.end or time())))
-    dpg.set_value('_elapsed_time_label', f'{formatted_diff.hours:0>2}:{formatted_diff.minutes:0>2}:{formatted_diff.seconds:0>2}')
-    update_pay()
+    dpg.set_value('elapsed_time_label', f'{formatted_diff.hours:0>2}:{formatted_diff.minutes:0>2}:{formatted_diff.seconds:0>2}')
+    if cfg.start_pause == 0:
+        update_pay()
 
 
 def update_pay():
@@ -104,19 +105,50 @@ def update_pay():
     dpg.set_value('current_pay', f'${round(due_pay, 2)}')
 
 
+def ensure_start_and_end(start, end=None):
+    """
+    replace None or 0 with the current epoch time
+    """
+    if end is None or end == 0:
+        end = time()
+    if start is None or start == 0:
+        start = time()
+    return start, end
+
+
+def formatted_seconds_diff(start, end=None):
+    start, end = ensure_start_and_end(start, end)
+    return format_seconds(abs(start - end))
+
+
+def calculate_total_pause_seconds():
+    start, end = ensure_start_and_end(cfg.start_pause, cfg.end_pause)
+    return abs(start - end) + sum(pause['diff_seconds'] for pause in cfg.pauses)
+
+
 def calculate_pay():
-    start = cfg.start or time()
-    end = cfg.end or time()
-    formatted_diff = format_seconds(abs(start - (end or time())))
+    start, end = ensure_start_and_end(cfg.start, cfg.end)
+    formatted_diff = formatted_seconds_diff(start, end)
     pay_per_hour = dpg.get_value('pay_per_hour')
-    due_pay = (((formatted_diff.hours * 3600) + (formatted_diff.minutes * 60) + formatted_diff.seconds) / 3600) * pay_per_hour
+    due_pay = (((
+                        (formatted_diff.hours * 3600)
+                        + (formatted_diff.minutes * 60)
+                        + formatted_diff.seconds
+                ) / 3600)
+              ) * pay_per_hour
+
+    due_pay -= (calculate_total_pause_seconds() / 3600) * pay_per_hour
     return due_pay
 
 
 def reset_start_end_clicked():
     cfg['start'] = 0
     cfg['end'] = 0
-    dpg.set_value('_elapsed_time_label', '00:00:00')
+    cfg['start_pause'] = 0
+    cfg['end_pause'] = 0
+    cfg['pauses'] = []
+    cfg.save()
+    dpg.set_value('elapsed_time_label', '00:00:00')
     dpg.set_value('current_pay', '$0')
 
 
@@ -131,11 +163,20 @@ def end_time_clicked(sender, _, data):
 
 
 def start_paused_clicked(sender, _, data):
-    pass
+    cfg['start_pause'] = int(time())
+    cfg.save()
 
 
 def end_paused_clicked(sender, _, data):
-    pass
+    cfg['end_pause'] = int(time())
+    cfg.pauses.append(create_pause_dict(cfg.start_pause, cfg.end_pause))
+    cfg['start_pause'] = 0
+    cfg['end_pause'] = 0
+    cfg.save()
+
+
+def create_pause_dict(start, end):
+    return {'start': start, 'end': end, 'diff_seconds': abs(start - end)}
 
 
 def run():

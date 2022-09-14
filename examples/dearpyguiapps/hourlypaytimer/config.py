@@ -80,7 +80,6 @@ class Config:
 
     def __setitem__(self, key, value):
         self.data[key] = value
-        self.save()
 
     def __contains__(self, item):
         return item in self.data
