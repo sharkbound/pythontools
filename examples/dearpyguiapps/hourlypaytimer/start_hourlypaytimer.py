@@ -8,7 +8,7 @@ import pyperclip
 from config import Config
 
 WIDTH = 550
-HEIGHT = 400
+HEIGHT = 405
 
 FormattedSeconds = collections.namedtuple('FormattedSeconds', 'total_seconds hours minutes seconds')
 
