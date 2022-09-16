@@ -59,7 +59,7 @@ def add_timer_control_elements():
         dpg.bind_item_theme(dpg.last_item(), '__round')
 
     with dpg.group(horizontal=True):
-        dpg.add_button(label='Reset', callback=reset_start_end_clicked)
+        dpg.add_button(label='Reset', callback=reset_clicked)
         dpg.bind_item_theme(dpg.last_item(), '__round')
         dpg.add_button(label='Clear End', callback=clear_end_clicked)
         dpg.bind_item_theme(dpg.last_item(), '__round')
@@ -117,10 +117,11 @@ def add_elapsed_time_elements():
 
 
 def update_labels():
-    if not cfg.start:
-        return
+    # if not cfg.start:
+    #     return
 
-    formatted_diff = format_seconds(abs(cfg.start - (cfg.end or time())))
+    start, end = ensure_start_and_end(cfg.start, cfg.end)
+    formatted_diff = format_seconds(abs(start - end))
     dpg.set_value('elapsed_time_label', f'{formatted_diff.hours:0>2}:{formatted_diff.minutes:0>2}:{formatted_diff.seconds:0>2}')
     if cfg.start_pause == 0:
         update_pay()
@@ -171,7 +172,7 @@ def calculate_pay():
     return due_pay
 
 
-def reset_start_end_clicked():
+def reset_clicked():
     cfg['start'] = 0
     cfg['end'] = 0
     cfg['start_pause'] = 0
