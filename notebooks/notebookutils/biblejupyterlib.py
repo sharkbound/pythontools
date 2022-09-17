@@ -134,7 +134,15 @@ def generate_css_style():
             + '</style>')
 
 
+def join_and_format_verses(verses: list['VerseInfo']):
+    out = []
+    for verse in verses:
+        out.append(f' [V.{verse.verse}] {verse.text}')
+    return ''.join(out)
+
+
 def format_verse_to_html(verse_data: 'GetVerseResult'):
+    joined_verses = join_and_format_verses(verse_data.verses)
     header = f'''
     <head>
         {generate_css_style()}
@@ -142,7 +150,7 @@ def format_verse_to_html(verse_data: 'GetVerseResult'):
     <body>
         <p class="verse_ref">{verse_data.reference}</p>
         <br/>
-        <p class="verse_text">{verse_data.text}</p>
+        <p class="verse_text">{joined_verses}</p>
     </body>'''
     return HTML(header)
 
