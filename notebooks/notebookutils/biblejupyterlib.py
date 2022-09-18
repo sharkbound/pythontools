@@ -73,20 +73,20 @@ REVELATION = 'Revelation'
 BASE_API = 'https://bible-api.com/'
 
 
-@dataclass
-class VerseRef:
-    chapter: int
-    start: int = -1
-    end: int = -1
+def build_verse_api_range_identifier(chapter, start, end):
+    out = f'{chapter}:{start}'
+    if end != -1:
+        out += f'-{end}'
+    return out
 
 
-def build_api_url(book, verse: VerseRef):
-    ext = ''
-    if verse.start != -1:
-        ext += f':{verse.start}'
-    if verse.end != -1:
-        ext += f'-{verse.end}'
-    return f'{BASE_API}{book}+{verse.chapter}{ext}?translation=kjv'
+def normalize_verse(verse):
+    return verse + ((-1,) * (3 - len(verse)))
+
+
+def build_api_url(book, *verses):
+    formatted_verse_refs = ','.join(build_verse_api_range_identifier(chapter, start, end) for chapter, start, end in map(normalize_verse, verses))
+    return f'{BASE_API}{book}+{formatted_verse_refs}?translation=kjv'
 
 
 class VerseInfo:
@@ -110,8 +110,8 @@ class GetVerseResult:
     reference: str
 
 
-def get_verse(book, verse: VerseRef):
-    r = requests.get(url := build_api_url(book, verse))
+def get_verse(book, *verses):
+    r = requests.get(url := build_api_url(book, *verses))
     r_json = r.json()
     return GetVerseResult(text=r_json['text'], response=r, verses=VerseInfo.from_response(r), url=url,
                           reference=r_json['reference'])
@@ -134,27 +134,47 @@ def generate_css_style():
             + '</style>')
 
 
-def join_and_format_verses(verses: list['VerseInfo']):
+def join_and_format_verses_to_html_tags(verses: list['VerseInfo']):
     out = []
-    for verse in verses:
-        out.append(f' [V.{verse.verse}] {verse.text}')
-    return ''.join(out)
+    for group in group_sequential_verses(verses):
+        first_verse, last_verse = group[0], group[-1]
+
+        reference = f'{first_verse.book_name} {first_verse.chapter}:{first_verse.verse}'
+        if first_verse.verse != last_verse.verse:
+            reference += f'-{last_verse.verse}'
+
+        verse_text = ' '.join(f'[V.{verse.verse}] {verse.text}' for verse in group)
+        out.append(f"""
+        <p class="verse_ref">{reference}</p>
+        <br/>
+        <p class="verse_text">{verse_text}</p>
+        """)
+    return '<br/>'.join(out)
 
 
-def format_verse_to_html(verse_data: 'GetVerseResult'):
-    joined_verses = join_and_format_verses(verse_data.verses)
+def group_sequential_verses(verses: list['VerseInfo']):
+    groupings = [[verses[0]]]
+    for verse in verses[1:]:
+        last_group = groupings[-1]
+        last = last_group[-1]
+        if verse.chapter == last.chapter and verse.verse == (last.verse + 1):
+            last_group.append(verse)
+        else:
+            groupings.append([verse])
+    return groupings
+
+
+def format_verses_to_html(verses: list[VerseInfo]):
     header = f'''
     <head>
         {generate_css_style()}
     </head>
     <body>
-        <p class="verse_ref">{verse_data.reference}</p>
-        <br/>
-        <p class="verse_text">{joined_verses}</p>
+        {join_and_format_verses_to_html_tags(verses)}
     </body>'''
     return HTML(header)
 
 
-def render_verse(book, verse: VerseRef):
-    verse_data = get_verse(book, verse)
-    return format_verse_to_html(verse_data)
+def render_verse(book, *verses):
+    verse_data = get_verse(book, *verses)
+    return format_verses_to_html(verse_data.verses)
