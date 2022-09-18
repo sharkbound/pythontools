@@ -74,7 +74,9 @@ BASE_API = 'https://bible-api.com/'
 
 
 def build_verse_api_range_identifier(chapter, start, end):
-    out = f'{chapter}:{start}'
+    out = f'{chapter}'
+    if start != -1:
+        out += f':{start}'
     if end != -1:
         out += f'-{end}'
     return out
@@ -86,7 +88,7 @@ def normalize_verse(verse):
 
 def build_api_url(book, *verses):
     formatted_verse_refs = ','.join(build_verse_api_range_identifier(chapter, start, end) for chapter, start, end in map(normalize_verse, verses))
-    return f'{BASE_API}{book}+{formatted_verse_refs}?translation=kjv'
+    return f'{BASE_API}{book}+{formatted_verse_refs}'  # ?translation=kjv'
 
 
 class VerseInfo:
