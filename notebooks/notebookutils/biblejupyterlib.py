@@ -120,6 +120,8 @@ def _verse_ref_to_tuple(value):
             return tuple(value)
         case slice() as s:
             return (s.start or -1, s.stop or -1, s.step or -1)
+        case int():
+            return (value, -1, -1)
         case _:
             raise ValueError(f'expected type ({tuple}, {list}, or {slice}), actually got: {type(value)}')
 
