@@ -112,7 +112,20 @@ class GetVerseResult:
     reference: str
 
 
+def _verse_ref_to_tuple(value):
+    match value:
+        case tuple():
+            return value
+        case list():
+            return tuple(value)
+        case slice() as s:
+            return (s.start or -1, s.stop or -1, s.step or -1)
+        case _:
+            raise ValueError(f'expected type ({tuple}, {list}, or {slice}), actually got: {type(value)}')
+
+
 def get_verse(book, *verses):
+    verses = [_verse_ref_to_tuple(v) for v in verses]
     r = requests.get(url := build_api_url(book, *verses))
     r_json = r.json()
     return GetVerseResult(text=r_json['text'], response=r, verses=VerseInfo.from_response(r), url=url,
@@ -177,6 +190,14 @@ def format_verses_to_html(verses: list[VerseInfo]):
     return HTML(header)
 
 
-def render_verse(book, *verses):
-    verse_data = get_verse(book, *verses)
-    return format_verses_to_html(verse_data.verses)
+class RenderVerseCallableWrapper:
+    def __call__(self, book, *verses):
+        verse_data = get_verse(book, *verses)
+        return format_verses_to_html(verse_data.verses)
+
+    def __getitem__(self, item):
+        book, verses = item[0], item[1:]
+        return self(book, *verses)
+
+
+render_verse = RenderVerseCallableWrapper()
