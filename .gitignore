@@ -135,3 +135,6 @@ dmypy.json
 /testingcode/
 /examples/dearpyguiapps/index_ui/index.db
 /examples/dearpyguiapps/hourlypaytimer/records.json
+
+# misc notebooks i dont want on git
+/notebooks/studynotebooks/
