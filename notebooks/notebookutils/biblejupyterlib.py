@@ -1,3 +1,5 @@
+import re
+
 import requests
 
 from dataclasses import dataclass
@@ -112,6 +114,16 @@ class GetVerseResult:
     reference: str
 
 
+def _str_verse_ref_to_tuple(value: str) -> tuple[int, int, int]:
+    if m := re.match(r'(\d+):(\d+)-(\d+)', value):
+        return int(m[1]), int(m[2]), int(m[3])
+    if m := re.match(r'(\d+):(\d+)', value):
+        return int(m[1]), int(m[2]), -1
+    if m := re.match(r'(\d+)', value):
+        return int(m[1]), -1, -1
+    return -1, -1, -1
+
+
 def _verse_ref_to_tuple(value):
     match value:
         case tuple():
@@ -122,6 +134,8 @@ def _verse_ref_to_tuple(value):
             return (s.start or -1, s.stop or -1, s.step or -1)
         case int():
             return (value, -1, -1)
+        case str():
+            return _str_verse_ref_to_tuple(value)
         case _:
             raise ValueError(f'expected type ({tuple}, {list}, or {slice}), actually got: {type(value)}')
 
