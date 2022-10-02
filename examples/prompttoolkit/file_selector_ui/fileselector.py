@@ -59,8 +59,9 @@ class FileSelector:
             ('final', 'fg:#ffff00'),
             ('pageinfo', 'fg:#ff00ff'),
             ('final_terminated', 'fg:#ff0000'),
+            ('bottom_toolbar_error', 'fg:#f00 bg:#000'),
         ])
-        self.session, self.app = create_app(self.key_bindings, self.styles, self.tokens)
+        self.session, self.app = create_app(self.key_bindings, self.styles, self.tokens, self.bottom_toolbar_tokens)
         self.path = initial_path or Path(os.getcwd())
         self._dir_items = list(self.path.glob('*'))
         self._displayed_dir_items = self._dir_items
@@ -70,6 +71,7 @@ class FileSelector:
         self._current_page = 0
         self._items_per_page = 15
         self._page_count = get_page_count(self._dir_items, self._items_per_page)
+        self._bottom_toolbar_message = ()
 
     def _exit_app(self):
         self._result = None
@@ -126,9 +128,16 @@ class FileSelector:
             self._update_items_using_current_path(reset_filter=True, update_files=True)
 
     def on_enter_pressed(self, _):
-        if self._index.items and self.selection_validator(self.selected_item):
+        if not self._index.items:
+            return
+
+        result = self.selection_validator(self.selected_item)
+        if result and not isinstance(result, str):
             self._result = self.selected_item
+            self._bottom_toolbar_message = [('class:bottom_toolbar_error', '')]
             self.app.exit(result=self.selected_item)
+        elif isinstance(result, str):
+            self._bottom_toolbar_message = [('class:bottom_toolbar_error', result)]
 
     def on_left_bracket_pressed(self, _):
         self._current_page = max(self._current_page - 1, 0)
@@ -171,19 +180,24 @@ class FileSelector:
             ret.append(('class:nofiles', '[NO FILES FOUND FOR CURRENT PATH]'))
         return ret
 
+    def bottom_toolbar_tokens(self):
+        if self._bottom_toolbar_message:
+            return self._bottom_toolbar_message
+        return [('class:bottom_toolbar_error', '')]
+
     def start(self):
         _fix_unnecessary_blank_lines(self.session)
         return self.app.run()
 
 
-def create_app(key_bindings, styles, token_func):
+def create_app(key_bindings, styles, token_func, bottom_toolbar_func=None):
     return (
-        session := ptt.PromptSession(message=token_func),
+        session := ptt.PromptSession(message=token_func, bottom_toolbar=bottom_toolbar_func),
         ptt.Application(layout=session.layout, key_bindings=key_bindings, style=styles)
     )
 
 
-# from questionary on pypi, i shorted it from the original
+# from questionary on pypi, i shortened it from the original some
 def _fix_unnecessary_blank_lines(ps: ptt.PromptSession) -> None:
     """This is a fix for additional empty lines added by prompt toolkit.
 
@@ -194,3 +208,14 @@ def _fix_unnecessary_blank_lines(ps: ptt.PromptSession) -> None:
     ps.layout.current_window.dont_extend_height = Always()
     # disables the cursor
     ps.layout.current_window.always_hide_cursor = Always()
+
+
+if __name__ == '__main__':
+    def is_valid(filename):
+        if not filename.suffix == '.py':
+            return f'Must select a python (.py) file! You tried to select ({filename.name})'
+        return True
+
+
+    selector = FileSelector(selection_validator=is_valid)
+    print(selector.start())
