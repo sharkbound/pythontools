@@ -5,70 +5,82 @@ import requests
 from dataclasses import dataclass
 from IPython.display import HTML
 
-GENESIS = 'Genesis'
-EXODUS = 'Exodus'
-LEVITICUS = 'Leviticus'
-NUMBERS = 'Numbers'
-DEUTERONOMY = 'Deuteronomy'
-JOSHUA = 'Joshua'
-JUDGES = 'Judges'
-RUTH = 'Ruth'
-FIRST_SAMUEL = '1+Samuel'
-SECOND_SAMUEL = '2+Samuel'
-FIRST_KINGS = '1+Kings'
-SECOND_KINGS = '2+Kings'
-FIRST_CHRONICLES = '1+Chronicles'
-SECOND_CHRONICLES = '2+Chronicles'
-EZRA = 'Ezra'
-NEHEMIAH = 'Nehemiah'
-ESTHER = 'Esther'
-JOB = 'Job'
-PSALMS = 'Psalms'
-PROVERBS = 'Proverbs'
-ECCLESIASTES = 'Ecclesiastes'
-SONG_OF_Songs = 'Song+of+Songs'
-ISAIAH = 'Isaiah'
-JEREMIAH = 'Jeremiah'
-LAMENTATIONS = 'Lamentations'
-EZEKIEL = 'Ezekiel'
-DANIEL = 'Daniel'
-HOSEA = 'Hosea'
-JOEL = 'Joel'
-AMOS = 'Amos'
-OBADIAH = 'Obadiah'
-JONAH = 'Jonah'
-MICAH = 'Micah'
-NAHUM = 'Nahum'
-HABAKKUK = 'Habakkuk'
-ZEPHANIAH = 'Zephaniah'
-HAGGAI = 'Haggai'
-ZECHARIAH = 'Zechariah'
-MALACHI = 'Malachi'
-MATTHEW = 'Matthew'
-MARK = 'Mark'
-LUKE = 'Luke'
-JOHN = 'John'
-ACTS = 'Acts'
-ROMANS = 'Romans'
-FIRST_CORINTHIANS = '1+Corinthians'
-SECOND_CORINTHIANS = '2+Corinthians'
-GALATIANS = 'Galatians'
-EPHESIANS = 'Ephesians'
-PHILIPPIANS = 'Philippians'
-COLOSSIANS = 'Colossians'
-FIRST_THESSALONIANS = '1+Thessalonians'
-SECOND_THESSALONIANS = '2+Thessalonians'
-FIRST_TIMOTHY = '1+Timothy'
-SECOND_TIMOTHY = '2+Timothy'
-TITUS = 'Titus'
-PHILEMON = 'Philemon'
-HEBREWS = 'Hebrews'
-JAMES = 'James'
-FIRST_PETER = '1+Peter'
-SECOND_PETER = '2+Peter'
-FIRST_JOHN = '1+John'
-SECOND_JOHN = '2+John'
-THIRD_JOHN = '3+John'
+
+class Chapter:
+    def __init__(self, url_identifier):
+        self.url_identifier = url_identifier
+
+    def __getitem__(self, item):
+        return render_verse(self.url_identifier, *item)
+
+    def __repr__(self):
+        return self.url_identifier
+
+
+GENESIS = Chapter('Genesis')
+EXODUS = Chapter('Exodus')
+LEVITICUS = Chapter('Leviticus')
+NUMBERS = Chapter('Numbers')
+DEUTERONOMY = Chapter('Deuteronomy')
+JOSHUA = Chapter('Joshua')
+JUDGES = Chapter('Judges')
+RUTH = Chapter('Ruth')
+FIRST_SAMUEL = Chapter('1+Samuel')
+SECOND_SAMUEL = Chapter('2+Samuel')
+FIRST_KINGS = Chapter('1+Kings')
+SECOND_KINGS = Chapter('2+Kings')
+FIRST_CHRONICLES = Chapter('1+Chronicles')
+SECOND_CHRONICLES = Chapter('2+Chronicles')
+EZRA = Chapter('Ezra')
+NEHEMIAH = Chapter('Nehemiah')
+ESTHER = Chapter('Esther')
+JOB = Chapter('Job')
+PSALMS = Chapter('Psalms')
+PROVERBS = Chapter('Proverbs')
+ECCLESIASTES = Chapter('Ecclesiastes')
+SONG_OF_Songs = Chapter('Song+of+Songs')
+ISAIAH = Chapter('Isaiah')
+JEREMIAH = Chapter('Jeremiah')
+LAMENTATIONS = Chapter('Lamentations')
+EZEKIEL = Chapter('Ezekiel')
+DANIEL = Chapter('Daniel')
+HOSEA = Chapter('Hosea')
+JOEL = Chapter('Joel')
+AMOS = Chapter('Amos')
+OBADIAH = Chapter('Obadiah')
+JONAH = Chapter('Jonah')
+MICAH = Chapter('Micah')
+NAHUM = Chapter('Nahum')
+HABAKKUK = Chapter('Habakkuk')
+ZEPHANIAH = Chapter('Zephaniah')
+HAGGAI = Chapter('Haggai')
+ZECHARIAH = Chapter('Zechariah')
+MALACHI = Chapter('Malachi')
+MATTHEW = Chapter('Matthew')
+MARK = Chapter('Mark')
+LUKE = Chapter('Luke')
+JOHN = Chapter('John')
+ACTS = Chapter('Acts')
+ROMANS = Chapter('Romans')
+FIRST_CORINTHIANS = Chapter('1+Corinthians')
+SECOND_CORINTHIANS = Chapter('2+Corinthians')
+GALATIANS = Chapter('Galatians')
+EPHESIANS = Chapter('Ephesians')
+PHILIPPIANS = Chapter('Philippians')
+COLOSSIANS = Chapter('Colossians')
+FIRST_THESSALONIANS = Chapter('1+Thessalonians')
+SECOND_THESSALONIANS = Chapter('2+Thessalonians')
+FIRST_TIMOTHY = Chapter('1+Timothy')
+SECOND_TIMOTHY = Chapter('2+Timothy')
+TITUS = Chapter('Titus')
+PHILEMON = Chapter('Philemon')
+HEBREWS = Chapter('Hebrews')
+JAMES = Chapter('James')
+FIRST_PETER = Chapter('1+Peter')
+SECOND_PETER = Chapter('2+Peter')
+FIRST_JOHN = Chapter('1+John')
+SECOND_JOHN = Chapter('2+John')
+THIRD_JOHN = Chapter('3+John')
 JUDE = 'Jude'
 REVELATION = 'Revelation'
 
@@ -158,7 +170,7 @@ def generate_css_style():
 }
 
 .verse_text {
-    font-size: 2em;
+    font-size: 2.3em;
     font-family: Baskerville, serif;
     font-weight: normal;
 }'''
