@@ -1,3 +1,4 @@
+import logging
 import re
 
 import requests
@@ -156,8 +157,11 @@ def get_verse(book, *verses):
     verses = [_verse_ref_to_tuple(v) for v in verses]
     r = requests.get(url := build_api_url(book, *verses))
     r_json = r.json()
-    return GetVerseResult(text=r_json['text'], response=r, verses=VerseInfo.from_response(r), url=url,
-                          reference=r_json['reference'])
+    try:
+        return GetVerseResult(text=r_json['text'], response=r, verses=VerseInfo.from_response(r), url=url,
+                              reference=r_json['reference'])
+    except KeyError as e:
+        logging.error(f'key error occurred when trying to get verse from api response: {e}\nURL: {url}\n\nresponse received:\n\t{r.text}')
 
 
 def generate_css_style():
