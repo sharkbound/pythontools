@@ -12,6 +12,9 @@ class Chapter:
         self.url_identifier = url_identifier
 
     def __getitem__(self, item):
+        if not isinstance(item, tuple):
+            item = (item,)
+
         return render_verse(self.url_identifier, *item)
 
     def __repr__(self):
