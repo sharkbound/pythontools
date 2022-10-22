@@ -17,6 +17,8 @@ class Chapter:
 
         return render_verse(self.url_identifier, *item)
 
+    __call__ = __getitem__
+
     def __repr__(self):
         return self.url_identifier
 
