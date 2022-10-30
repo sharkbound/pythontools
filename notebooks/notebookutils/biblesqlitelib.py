@@ -152,9 +152,20 @@ class BibleVerseDB:
         return verses_list
 
 
+def remove_duplicate_verses(verses: list['QueryVerseResult']):
+    seen = set()
+    non_duplicate_verses = []
+    for verse in verses:
+        if verse.id not in seen:
+            non_duplicate_verses.append(verse)
+            seen.add(verse.id)
+    return non_duplicate_verses
+
+
 def group_sequential_verses(verses: list['QueryVerseResult']):
-    groupings = [[verses[0]]]
-    for verse in verses[1:]:
+    non_duplicate_verses = remove_duplicate_verses(verses)
+    groupings = [[non_duplicate_verses[0]]]
+    for verse in non_duplicate_verses[1:]:
         last_group = groupings[-1]
         last = last_group[-1]
         if verse.chapter == last.chapter and verse.verse == (last.verse + 1):
