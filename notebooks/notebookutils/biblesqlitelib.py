@@ -175,18 +175,32 @@ def group_sequential_verses(verses: list['QueryVerseResult']):
     return groupings
 
 
+def create_biblegateway_link(ref: list):
+    url = 'https://www.biblegateway.com/passage/?search={book_name}+{chapter}%3A{verse_start}{verse_end}&version=NIV'
+    match ref:
+        case [str() as book_name, int() as chapter]:
+            return url.format(book_name=book_name, chapter=chapter, verse_start='', verse_end='')
+        case [str() as book_name, int() as chapter, int() as verse_start]:
+            return url.format(book_name=book_name, chapter=chapter, verse_start=verse_start, verse_end='')
+        case [str() as book_name, int() as chapter, int() as verse_start, int() as verse_end]:
+            return url.format(book_name=book_name, chapter=chapter, verse_start=verse_start, verse_end=f'-{verse_end}')
+    raise ValueError(f'invalid format for verse ref: {ref!r}')
+
+
 def join_and_format_verses_to_html_tags(verses: list['QueryVerseResult']):
     out = []
     for group in group_sequential_verses(verses):
         first_verse, last_verse = group[0], group[-1]
 
         reference = f'{first_verse.book_name} {first_verse.chapter}:{first_verse.verse}'
+        ref_parts = [first_verse.book_name, first_verse.chapter, first_verse.verse]
         if first_verse.verse != last_verse.verse:
             reference += f'-{last_verse.verse}'
+            ref_parts.append(last_verse.verse)
 
         verse_text = ' '.join(f'[V.{verse.verse}] {verse.text}' for verse in group)
         out.append(f"""
-        <p class="verse_ref">{reference}</p>
+        <p class="verse_ref">{reference} <a href="{create_biblegateway_link(ref_parts)}">[NIV]</a></p>
         <br/>
         <p class="verse_text">{verse_text}</p>
         """)
