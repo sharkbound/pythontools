@@ -39,3 +39,6 @@ sqlalchemy -> database driver ORM wrapper
 more-itertools -> more iterator based functions that are missing from base itertools
 pympler -> memory analysis and profiles tools    [GIT: https://github.com/pympler/pympler ]
 toolz ->  iterator and collection utilities [PYPI: https://pypi.org/project/toolz/ ]
+
+# PERFORMANCE AND MEMORY DEBUGGING
+scalene -> A high-resolution, low-overhead CPU, GPU, and memory profiler for Python
