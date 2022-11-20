@@ -22,6 +22,18 @@ VERSE_QUERY_TYPE = typing.Union[
     tuple[
         int,  # book
         int,  # chapter
+        int,  # verse
+        Ellipsis  # verse to last verse of chapter
+    ],
+    tuple[
+        int,  # book
+        int,  # chapter
+        Ellipsis,  # start to end verse
+        int  # verse end
+    ],
+    tuple[
+        int,  # book
+        int,  # chapter
         int,  # verse start
         int,  # verse end
     ]
@@ -116,9 +128,28 @@ class BibleVerseDB:
         cursor.execute(raw_query, query_kv)
         return [QueryVerseResult(*result) for result in cursor]
 
+    def _find_last_verse_in_chapter(self, book: int, chapter: int, start_verse: int):
+        res = self._query_cast('select * from verses where book = :book and chapter = :chapter and verse >= :start_verse order by verse desc limit 1',
+                               book=book, chapter=chapter, start_verse=start_verse)
+
+        if not res:
+            return start_verse
+
+        return res[0].verse
+
+    def _replace_ellipsis(self, verse_ref: VERSE_QUERY_TYPE) -> VERSE_QUERY_TYPE:
+        if len(verse_ref) != 4 or not any(v == Ellipsis for v in verse_ref):
+            return verse_ref
+
+        if verse_ref[-1] == Ellipsis:
+            return (*verse_ref[:-1], self._find_last_verse_in_chapter(verse_ref[0], verse_ref[1], verse_ref[2]))
+
+        elif verse_ref[-2] == Ellipsis:
+            return (verse_ref[0], verse_ref[1], 1, verse_ref[3])
+
     def _build_query_for_verse_ref_tuple(self, verse_ref: VERSE_QUERY_TYPE):
-        # if isinstance(verse_ref, str):
-        #     return _str_verse_ref_to_query_dict(verse_ref)
+        verse_ref = self._replace_ellipsis(verse_ref)
+
         match verse_ref:
             case (int() as book, ):
                 filterquery = 'book = :book'
