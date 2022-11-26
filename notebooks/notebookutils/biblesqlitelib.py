@@ -272,5 +272,10 @@ DB = BibleVerseDB(r'D:\HddDownloads\world_english_bible.sqlite')
 def render(*verses: VERSE_QUERY_TYPE):
     return format_verses_to_html(DB.get(*verses))
 
+
+def samebook(book: int, *verses: VERSE_QUERY_TYPE):
+    for verse in verses:
+        yield (book, *verse)
+
 # download the sqlite database from here: https://www.biblesupersearch.com/bible-downloads/
 # print([it.reference for it in BibleVerseDB(r"D:\HddDownloads\world_english_bible.sqlite").get((DANIEL, 5, 1), (DANIEL, 1, 1))])
