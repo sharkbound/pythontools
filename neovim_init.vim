@@ -11,7 +11,7 @@ set shiftwidth=4            " width for autoindents
 set autoindent              " indent a new line the same amount as the line just typed
 set nu rnu                " relative line numbers hybrid
 set wildmode=longest,list   " get bash-like tab completions
-set cc=80                  " set an 80 column border for good coding style
+" set cc=80                  " set an 80 column border for good coding style
 filetype plugin indent on   "allow auto-indenting depending on file type
 syntax on                   " syntax highlighting
 set mouse=a                 " enable mouse click
@@ -23,13 +23,16 @@ set ttyfast                 " Speed up scrolling in Vim
 " set noswapfile            " disable creating swap file
 " set backupdir=~/.cache/vim " Directory to store backup files.
 
+" maps the key <leader> represents, need to be mapped before uses of it
+let mapleader=" "
+
 " easy motion search
 map z/ <Plug>(incsearch-easymotion-/)
 map z? <Plug>(incsearch-easymotion-?)
 map zg/ <Plug>(incsearch-easymotion-stay)
-
-let mapleader=" "
 map <leader>k <Plug>(easymotion-s)
+map <leader>j <Plug>(easymotion-f)
+
 
 " nerd tree mappings
 nnoremap <leader>n :NERDTreeFocus<CR>
@@ -40,6 +43,10 @@ nnoremap <C-f> :NERDTreeFind<CR>
 " tab movement CTRL+LEFT/RIGHT
 nnoremap <C-h> :tabprevious<CR>
 nnoremap <C-l> :tabnext<CR>
+
+" make O and o create a new line only, and not go insert mode after
+nnoremap oo o<Esc>
+nnoremap OO O<Esc>
 
 " Go to tab by number
 noremap <leader>1 1gt
@@ -67,5 +74,6 @@ call plug#begin('~/AppData/Local/nvim/autoload/plugged')
  Plug 'machakann/vim-highlightedyank'  
  Plug 'haya14busa/incsearch-easymotion.vim'
  Plug 'haya14busa/incsearch.vim'
+" Plug 'nvim-treesitter/nvim-treesitter'
+" Plug 'LeonGr/neovim-expand-selection'
 call plug#end()
-
