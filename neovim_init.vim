@@ -23,6 +23,9 @@ set ttyfast                 " Speed up scrolling in Vim
 " set noswapfile            " disable creating swap file
 " set backupdir=~/.cache/vim " Directory to store backup files.
 
+" highlight the visual selection after pressing enter.
+xnoremap <silent> <cr> "*y:silent! let searchTerm = '\V'.substitute(escape(@*, '\/'), "\n", '\\n', "g") <bar> let @/ = searchTerm <bar> echo '/'.@/ <bar> call histadd("search", searchTerm) <bar> set hls<cr>
+
 " maps the key <leader> represents, need to be mapped before uses of it
 let mapleader=" "
 
@@ -32,7 +35,6 @@ map z? <Plug>(incsearch-easymotion-?)
 map zg/ <Plug>(incsearch-easymotion-stay)
 map <leader>k <Plug>(easymotion-s)
 map <leader>j <Plug>(easymotion-f)
-
 
 " nerd tree mappings
 nnoremap <leader>n :NERDTreeFocus<CR>
@@ -74,6 +76,7 @@ call plug#begin('~/AppData/Local/nvim/autoload/plugged')
  Plug 'machakann/vim-highlightedyank'  
  Plug 'haya14busa/incsearch-easymotion.vim'
  Plug 'haya14busa/incsearch.vim'
+ Plug 'mg979/vim-visual-multi', {'branch': 'master'}
 " Plug 'nvim-treesitter/nvim-treesitter'
 " Plug 'LeonGr/neovim-expand-selection'
 call plug#end()
