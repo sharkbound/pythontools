@@ -1,0 +1,10 @@
+Requires Plugged be install on the system!
+
+Installation scripts can be found here:
+https://github.com/junegunn/vim-plug
+
+Required folders:
+(WINDOWS [note: ~ translates to: "C:\users\<user>\")
+~/AppData/Local/nvim/   ---  neovim files (init.vim and such)
+~/AppData/Local/nvim/autoload/plugged  --- folder where plugins are cloned into
+
