@@ -26,6 +26,19 @@ set ttyfast                 " Speed up scrolling in Vim
 " highlight the visual selection after pressing enter.
 xnoremap <silent> <cr> "*y:silent! let searchTerm = '\V'.substitute(escape(@*, '\/'), "\n", '\\n', "g") <bar> let @/ = searchTerm <bar> echo '/'.@/ <bar> call histadd("search", searchTerm) <bar> set hls<cr>
 
+" vim visual multi
+" https://github.com/mg979/vim-visual-multi
+let g:VM_mouse_mappings = 1
+" nmap   <C-LeftMouse>         <Plug>(VM-Mouse-Cursor)
+nmap   <C-LeftMouse>         <Plug>(VM-Mouse-Word)
+" nmap   <C-S-LeftMouse>      <Plug>(VM-Mouse-Column)
+
+" select all occurences in of that selection
+nmap <C-e> <Plug>(VM-Select-All)
+imap <C-e> <ESC><Plug>(VM-Select-All)
+vmap <C-e> <ESC><Plug>(VM-Select-All)
+
+
 " maps the key <leader> represents, need to be mapped before uses of it
 let mapleader=" "
 
