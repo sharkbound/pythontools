@@ -17,7 +17,7 @@ syntax on                   " syntax highlighting
 set mouse=a                 " enable mouse click
 " set clipboard=unnamedplus   " using system clipboard
 filetype plugin on
-set cursorline              " highlight current cursorline
+" set cursorline              " highlight current cursorline
 set ttyfast                 " Speed up scrolling in Vim
 " set spell                 " enable spell check (may need to download language package)
 " set noswapfile            " disable creating swap file
@@ -29,9 +29,11 @@ xnoremap <silent> <cr> "*y:silent! let searchTerm = '\V'.substitute(escape(@*, '
 " vim visual multi
 " https://github.com/mg979/vim-visual-multi
 let g:VM_mouse_mappings = 1
-" nmap   <C-LeftMouse>         <Plug>(VM-Mouse-Cursor)
-nmap   <C-LeftMouse>         <Plug>(VM-Mouse-Word)
-" nmap   <C-S-LeftMouse>      <Plug>(VM-Mouse-Column)
+
+" keymaps for vim-visual-multi mouse actions
+nmap   <C-LeftMouse>         <Plug>(VM-Mouse-Cursor)
+nmap   <C-RightMouse>        <Plug>(VM-Mouse-Word)  
+nmap   <M-C-RightMouse>      <Plug>(VM-Mouse-Column)
 
 " select all occurences in of that selection
 nmap <C-e> <Plug>(VM-Select-All)
@@ -54,6 +56,11 @@ nnoremap <leader>n :NERDTreeFocus<CR>
 nnoremap <C-n> :NERDTree<CR>
 nnoremap <C-t> :NERDTreeToggle<CR>
 nnoremap <C-f> :NERDTreeFind<CR>
+
+" quick paste/copy to clipboard mappings
+map <leader>p "+p<ESC>
+map <leader>y "+y<ESC>
+
 
 " tab movement CTRL+LEFT/RIGHT
 nnoremap <C-h> :tabprevious<CR>
@@ -93,4 +100,3 @@ call plug#begin('~/AppData/Local/nvim/autoload/plugged')
 " Plug 'nvim-treesitter/nvim-treesitter'
 " Plug 'LeonGr/neovim-expand-selection'
 call plug#end()
-
