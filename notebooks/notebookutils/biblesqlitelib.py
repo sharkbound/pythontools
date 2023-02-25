@@ -6,6 +6,8 @@ from typing import NamedTuple
 
 from IPython.core.display import HTML
 
+RAW = 'raw'
+JOIN = 'join'
 VERSE_QUERY_TYPE = typing.Union[
     tuple[
         int,  # book
@@ -239,14 +241,7 @@ def join_and_format_verses_to_html_tags(verses: list['QueryVerseResult']):
 
 
 def format_verses_to_html(verses: list[QueryVerseResult]):
-    header = f'''
-    <head>
-        {generate_css_style()}
-    </head>
-    <body>
-        {join_and_format_verses_to_html_tags(verses)}
-    </body>'''
-    return HTML(header)
+    return join_and_format_verses_to_html_tags(verses)
 
 
 def generate_css_style():
@@ -269,8 +264,31 @@ def generate_css_style():
 DB = BibleVerseDB(r'D:\HddDownloads\world_english_bible.sqlite')
 
 
-def render(*verses: VERSE_QUERY_TYPE):
-    return format_verses_to_html(DB.get(*verses))
+def render(*verses: VERSE_QUERY_TYPE, mode=RAW):
+    if mode not in (RAW, JOIN):
+        raise ValueError(f'invalid mode: {mode!r}, must be either [{RAW!r} or {HTML!r}]')
+    
+    render_verses = []
+    if mode == RAW:
+        for verseref in verses:
+            render_verses.append(DB.get(verseref))
+    else:
+        items = []
+        for verseref in verses:
+            for verse in DB.get(verseref):
+                items.append(verse)
+        render_verses.append(items)
+            
+    output_verse_html = '\n'.join(format_verses_to_html(group) for group in render_verses)
+            
+    header = f'''
+    <head>
+        {generate_css_style()}
+    </head>
+    <body>
+        {output_verse_html}
+    </body>'''
+    return HTML(header)
 
 
 def samebook(book: int, *verses: VERSE_QUERY_TYPE):
