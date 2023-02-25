@@ -266,7 +266,7 @@ DB = BibleVerseDB(r'D:\HddDownloads\world_english_bible.sqlite')
 
 def render(*verses: VERSE_QUERY_TYPE, mode=RAW):
     if mode not in (RAW, JOIN):
-        raise ValueError(f'invalid mode: {mode!r}, must be either [{RAW!r} or {HTML!r}]')
+        raise ValueError(f'invalid mode: {mode!r}, must be either [{RAW!r} or {JOIN!r}]')
     
     render_verses = []
     if mode == RAW:
