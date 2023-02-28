@@ -61,6 +61,12 @@ nnoremap <C-f> :NERDTreeFind<CR>
 map <leader>p "+p<ESC>
 map <leader>y "+y<ESC>
 
+" allows incsearch highlighting for range commands
+cnoremap $t <CR>:t''<CR>
+cnoremap $T <CR>:T''<CR>
+cnoremap $m <CR>:m''<CR>
+cnoremap $M <CR>:M''<CR>
+cnoremap $d <CR>:d<CR>``
 
 " tab movement CTRL+LEFT/RIGHT
 nnoremap <C-h> :tabprevious<CR>
