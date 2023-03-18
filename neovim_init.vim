@@ -87,6 +87,12 @@ noremap <leader>7 7gt
 noremap <leader>8 8gt
 noremap <leader>9 9gt
 
+" Use ctrl-[hjkl] to select the active split!
+nmap <silent> <c-k> :wincmd k<CR>
+nmap <silent> <c-j> :wincmd j<CR>
+nmap <silent> <c-h> :wincmd h<CR>
+nmap <silent> <c-l> :wincmd l<CR>
+
 call plug#begin('~/AppData/Local/nvim/autoload/plugged')
 " Plugin Section
  Plug 'dracula/vim'
@@ -103,6 +109,11 @@ call plug#begin('~/AppData/Local/nvim/autoload/plugged')
  Plug 'haya14busa/incsearch-easymotion.vim'
  Plug 'haya14busa/incsearch.vim'
  Plug 'mg979/vim-visual-multi', {'branch': 'master'}
+ Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
+ Plug 'junegunn/fzf.vim' 
+ Plug 'ggreer/the_silver_searcher'
+ Plug 'nvim-lua/plenary.nvim' " don't forget to add this one if you don't have it yet!
+ Plug 'ThePrimeagen/harpoon'
 " Plug 'nvim-treesitter/nvim-treesitter'
 " Plug 'LeonGr/neovim-expand-selection'
 call plug#end()
