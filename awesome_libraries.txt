@@ -14,7 +14,6 @@ plotly   ->  https://plotly.com/
 plotnine  -> https://plotnine.readthedocs.io/en/stable/
 networkx  -> used for representing and manipulating node-tree type data
 
-
 # DEBUGGING PRINT ALTERNATIVE
 icecream            # logging library that also logs variables and other data from one log function
 
@@ -34,7 +33,6 @@ tensorflow -> https://www.tensorflow.org/
 # DATABASES
 sqlalchemy -> database driver ORM wrapper
 
-
 # UTILITIES
 more-itertools -> more iterator based functions that are missing from base itertools
 pympler -> memory analysis and profiles tools    [GIT: https://github.com/pympler/pympler ]
@@ -42,3 +40,9 @@ toolz ->  iterator and collection utilities [PYPI: https://pypi.org/project/tool
 
 # PERFORMANCE AND MEMORY DEBUGGING
 scalene -> A high-resolution, low-overhead CPU, GPU, and memory profiler for Python
+
+# SYMBOLIC MATH SOLVER / LIBRARY
+sympy -> https://www.sympy.org/en/index.html
+
+# SAT SOLVER
+z3-solver -> https://pypi.org/project/z3-solver/
