@@ -56,7 +56,7 @@ def execute_console_command_and_check_output(args, outfile):
 
 
 def handle_mode_increase_volume():
-    VALID_EXTENSIONS = ['.mp3']
+    VALID_EXTENSIONS = ['.mp3', '.mp4', '.webm']
 
     path = launch_file_selector(initial_path=ROOT_DIR, selection_validator=lambda p: p.suffix.lower() in VALID_EXTENSIONS)
     volume = questionary.text('Enter amount to boost volume by: ', validate=is_float).ask()
